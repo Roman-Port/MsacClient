@@ -47,11 +47,18 @@
             this.corePanel = new System.Windows.Forms.Panel();
             this.label5 = new System.Windows.Forms.Label();
             this.boxPsdPgm = new System.Windows.Forms.ComboBox();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+            this.label6 = new System.Windows.Forms.Label();
+            this.btnDirectFileUpload = new System.Windows.Forms.Button();
+            this.boxDirectUploadName = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.connectPort)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.corePanel.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.tableLayoutPanel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnConnect
@@ -244,6 +251,7 @@
             this.corePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.corePanel.Controls.Add(this.groupBox2);
             this.corePanel.Controls.Add(this.groupBox1);
             this.corePanel.Location = new System.Drawing.Point(12, 38);
             this.corePanel.Name = "corePanel";
@@ -278,6 +286,70 @@
             this.boxPsdPgm.TabIndex = 10;
             this.boxPsdPgm.Text = "HD1";
             // 
+            // groupBox2
+            // 
+            this.groupBox2.AutoSize = true;
+            this.groupBox2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.groupBox2.Controls.Add(this.tableLayoutPanel2);
+            this.groupBox2.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox2.Location = new System.Drawing.Point(0, 139);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(539, 87);
+            this.groupBox2.TabIndex = 6;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Direct File Upload";
+            // 
+            // tableLayoutPanel2
+            // 
+            this.tableLayoutPanel2.AutoSize = true;
+            this.tableLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tableLayoutPanel2.ColumnCount = 2;
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel2.Controls.Add(this.label6, 0, 0);
+            this.tableLayoutPanel2.Controls.Add(this.btnDirectFileUpload, 1, 2);
+            this.tableLayoutPanel2.Controls.Add(this.boxDirectUploadName, 0, 1);
+            this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 16);
+            this.tableLayoutPanel2.Name = "tableLayoutPanel2";
+            this.tableLayoutPanel2.RowCount = 3;
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(533, 68);
+            this.tableLayoutPanel2.TabIndex = 5;
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(3, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(49, 13);
+            this.label6.TabIndex = 0;
+            this.label6.Text = "Filename";
+            // 
+            // btnDirectFileUpload
+            // 
+            this.btnDirectFileUpload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDirectFileUpload.Location = new System.Drawing.Point(455, 42);
+            this.btnDirectFileUpload.Name = "btnDirectFileUpload";
+            this.btnDirectFileUpload.Size = new System.Drawing.Size(75, 23);
+            this.btnDirectFileUpload.TabIndex = 3;
+            this.btnDirectFileUpload.Text = "Upload...";
+            this.btnDirectFileUpload.UseVisualStyleBackColor = true;
+            this.btnDirectFileUpload.Click += new System.EventHandler(this.btnDirectFileUpload_Click);
+            // 
+            // boxDirectUploadName
+            // 
+            this.boxDirectUploadName.Dock = System.Windows.Forms.DockStyle.Top;
+            this.boxDirectUploadName.Location = new System.Drawing.Point(3, 16);
+            this.boxDirectUploadName.Name = "boxDirectUploadName";
+            this.boxDirectUploadName.Size = new System.Drawing.Size(260, 20);
+            this.boxDirectUploadName.TabIndex = 1;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -300,6 +372,10 @@
             this.tableLayoutPanel1.PerformLayout();
             this.corePanel.ResumeLayout(false);
             this.corePanel.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
+            this.tableLayoutPanel2.ResumeLayout(false);
+            this.tableLayoutPanel2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -326,6 +402,11 @@
         private System.Windows.Forms.Panel corePanel;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ComboBox boxPsdPgm;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button btnDirectFileUpload;
+        private System.Windows.Forms.TextBox boxDirectUploadName;
     }
 }
 

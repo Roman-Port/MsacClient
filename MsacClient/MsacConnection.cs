@@ -45,7 +45,7 @@ namespace MsacClient
                 using (XmlWriter writer = XmlWriter.Create(stringWriter, settings))
                 {
                     ser.Serialize(writer, request, ns);
-                    xmlPayloadString = stringWriter.ToString() + "\r\n";
+                    xmlPayloadString = stringWriter.ToString();
                 }
             }
 
@@ -173,6 +173,43 @@ namespace MsacClient
 
             //Send and get response (any errors would be caught in the validation)
             await SendRequestGetResponse(req);
+        }
+
+        /// <summary>
+        /// Directly uploads a file to the server.
+        /// </summary>
+        /// <param name="filename">The destination filename.</param>
+        /// <param name="buffer">Buffer to read from.</param>
+        /// <param name="index">Index within the buffer to read from.</param>
+        /// <param name="count">Number of bytes in the buffer.</param>
+        /// <returns></returns>
+        public async Task FileCopyDirectAsync(string filename, byte[] buffer, int index, int count)
+        {
+            //Validate
+            if (filename == null)
+                throw new ArgumentNullException(nameof(filename));
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (index + count > buffer.Length || index < 0 || count < 0)
+                throw new ArgumentException("Buffer size is out of range.");
+
+            //Create the request body
+            HDRadioEnvelope req = new HDRadioEnvelope
+            {
+                MsacRequest = new MsacRequest
+                {
+                    MsgInfo = new MsgInfo
+                    {
+                        MsgType = "Direct File Copy",
+                        FileDestination = filename,
+                        FileSize = count.ToString(),
+                        Offset = "0"
+                    }
+                }
+            };
+
+            //Send (this will do validation)
+            await SendRequestGetResponse(req, buffer, index, count);
         }
     }
 }

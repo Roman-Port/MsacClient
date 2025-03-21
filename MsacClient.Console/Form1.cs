@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -86,12 +87,42 @@ namespace MsacClient.Console
                 boxAlbum.Enabled = ready;
                 boxGenre.Enabled = ready;
                 boxPsdPgm.Enabled = ready;
+                boxDirectUploadName.Enabled = ready;
+                btnDirectFileUpload.Enabled = ready;
             });
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             UpdateStatus(ConnectionStatus.DISCONNECTED, "Ready for connection.");
+        }
+
+        private void btnDirectFileUpload_Click(object sender, EventArgs e)
+        {
+            //Check that the filename is valid
+            if (boxDirectUploadName.Text.Length == 0)
+            {
+                MessageBox.Show("The filename must not be blank.", "Filename Problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            //Show file picker
+            OpenFileDialog fd = new OpenFileDialog();
+            fd.Filter = "*.*|*.*";
+            if (fd.ShowDialog() != DialogResult.OK)
+                return;
+
+            //Read file data
+            byte[] data = File.ReadAllBytes(fd.FileName);
+
+            //Send
+            conn.FileCopyDirectAsync(boxDirectUploadName.Text, data, 0, data.Length).ContinueWith((Task t) =>
+            {
+                if (t.IsFaulted)
+                    UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
+                else
+                    UpdateStatus(ConnectionStatus.CONNECTED, "File uploaded OK.");
+            });
         }
     }
 }

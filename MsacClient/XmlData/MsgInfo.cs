@@ -31,5 +31,14 @@ namespace MsacClient.XmlData
 
         [XmlAttribute("state")]
         public string State { get; set; }
+
+        [XmlAttribute("fileDestination")]
+        public string FileDestination { get; set; }
+
+        [XmlAttribute("fileSize")]
+        public string FileSize { get; set; }
+
+        [XmlAttribute("offset")]
+        public string Offset { get; set; }
     }
 }
