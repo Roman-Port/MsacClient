@@ -12,8 +12,14 @@ namespace MsacClient.Entities
     {
         /// <summary>
         /// The state returned by the server. Call RefreshStateAsync() to update.
+        /// Pending, Active
         /// </summary>
         string State { get; }
+
+        /// <summary>
+        /// The ID from the server.
+        /// </summary>
+        string Tag { get; }
 
         /// <summary>
         /// Requests a state update from the server.

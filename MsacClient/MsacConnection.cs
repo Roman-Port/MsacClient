@@ -213,14 +213,14 @@ namespace MsacClient
         /// <param name="startTime">The estimated time this image will be displayed.</param>
         /// <param name="fileName">The filename on the exporter to use.</param>
         /// <param name="duration">The duration of the item.</param>
-        /// <param name="lotId">The requested lot ID.</param>
+        /// <param name="lotId">The requested lot ID. Optional.</param>
         /// <param name="expiry">The expiration of this lot.</param>
         /// <param name="dataService">The data service to send this on.</param>
         /// <param name="triggerType">The type of trigger to use.</param>
         /// <param name="cancelPrior">If true, cancels other items being sent.</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ISyncSendLot> SyncPreSendAsync(DateTime startTime, string fileName, TimeSpan duration, int lotId, DateTime expiry, string dataService = "AAHD1", SyncSendTriggerType triggerType = SyncSendTriggerType.Passive, bool cancelPrior = false)
+        public async Task<ISyncSendLot> SyncPreSendAsync(DateTime startTime, string fileName, TimeSpan duration, int? lotId, DateTime expiry, string dataService = "AAHD1", SyncSendTriggerType triggerType = SyncSendTriggerType.Passive, bool cancelPrior = false)
         {
             //Create the request body
             HDRadioEnvelope req = new HDRadioEnvelope
@@ -239,7 +239,7 @@ namespace MsacClient
                     },
                     LotInfo = new LotInfo
                     {
-                        LotId = lotId.ToString(),
+                        LotId = lotId == null ? null : lotId.ToString(),
                         ExpirationDate = Utils.DateTimeToMsacString(expiry)
                     }
                 }
@@ -279,6 +279,7 @@ namespace MsacClient
 
             public int LotId => lotId;
             public string State => state;
+            public string Tag => uniqueTag;
 
             /// <summary>
             /// Takes a response from any state-supplying message and updates the state after verifying it

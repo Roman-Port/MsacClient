@@ -1,4 +1,5 @@
-﻿using MsacClient.Entities;
+﻿using MsacClient.Console.Forms;
+using MsacClient.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -104,7 +105,7 @@ namespace MsacClient.Console
             });
         }
 
-        private void UpdateStatus(ConnectionStatus status, string statusText)
+        private void UpdateStatus(ConnectionStatus status, string statusText, Action extra = null)
         {
             Invoke((MethodInvoker)delegate
             {
@@ -128,12 +129,27 @@ namespace MsacClient.Console
                 boxXhdrMime.Enabled = ready;
                 boxDirectUploadName.Enabled = ready;
                 btnDirectFileUpload.Enabled = ready;
+                boxSyncActive.Enabled = ready;
+                boxSyncCancelPrior.Enabled = ready;
+                boxSyncDataService.Enabled = ready;
+                boxSyncDuration.Enabled = ready;
+                boxSyncExpiry.Enabled = ready;
+                boxSyncFilename.Enabled = ready;
+                boxSyncLotId.Enabled = ready;
+                boxSyncTime.Enabled = ready;
+                btnSyncSend.Enabled = ready;
+
+                //Fire extra
+                if (extra != null)
+                    extra();
             });
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             UpdateStatus(ConnectionStatus.DISCONNECTED, "Ready for connection.");
+            boxSyncTime.Value = DateTime.Now;
+            boxSyncExpiry.Value = DateTime.Now.AddYears(10);
         }
 
         private void btnDirectFileUpload_Click(object sender, EventArgs e)
@@ -161,6 +177,37 @@ namespace MsacClient.Console
                     UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
                 else
                     UpdateStatus(ConnectionStatus.CONNECTED, "File uploaded OK.");
+            });
+        }
+
+        private void btnSyncSend_Click(object sender, EventArgs e)
+        {
+            //Parse lot ID
+            int? lotId = null;
+            if (boxSyncLotId.Text.Length > 0)
+            {
+                if (int.TryParse(boxSyncLotId.Text, out int _lot))
+                {
+                    lotId = _lot;
+                } else
+                {
+                    MessageBox.Show("Lot ID is invalid. Specify a number or leave blank", "Invalid Lot ID", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            //Send
+            conn.SyncPreSendAsync(boxSyncTime.Value, boxSyncFilename.Text, TimeSpan.FromSeconds((int)boxSyncDuration.Value), lotId, boxSyncExpiry.Value, boxSyncDataService.Text, boxSyncActive.Checked ? SyncSendTriggerType.Active : SyncSendTriggerType.Passive, boxSyncCancelPrior.Checked).ContinueWith((Task<ISyncSendLot> t) =>
+            {
+                if (t.IsFaulted)
+                    UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
+                else
+                    UpdateStatus(ConnectionStatus.CONNECTED, "OK.", () =>
+                    {
+                        ISyncSendLot lot = t.GetAwaiter().GetResult();
+                        boxXhdrAction.Items.Add(lot.LotId);
+                        new SyncLotForm(lot).Show();
+                    });
             });
         }
     }
