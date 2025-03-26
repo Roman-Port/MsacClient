@@ -40,5 +40,23 @@ namespace MsacClient.XmlData
 
         [XmlAttribute("offset")]
         public string Offset { get; set; }
+
+        [XmlAttribute("startTime")]
+        public string StartTime { get; set; }
+
+        [XmlAttribute("fileName")]
+        public string FileName { get; set; }
+
+        [XmlAttribute("songDuration")]
+        public string SongDuration { get; set; } // seconds, integer
+
+        [XmlAttribute("triggerType")]
+        public string TriggerType { get; set; }
+
+        [XmlAttribute("cancelPrior")]
+        public string CancelPrior { get; set; } // TRUE or FALSE
+
+        [XmlAttribute("uniqueTag")]
+        public string UniqueTag { get; set; }
     }
 }

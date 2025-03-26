@@ -48,17 +48,54 @@ namespace MsacClient.Console
             else if (exporterAddress.StartsWith("HD") && int.TryParse(exporterAddress.Substring(2), out int subNum) && subNum > 1)
                 exporterAddress = baseExporterAddr + (10010 + (subNum - 2)).ToString();
 
+            //Start PSD build
+            PsdSendBuilder builder = new PsdSendBuilder();
+            builder.SetTitle(boxTitle.Text);
+            builder.SetArtist(boxArtist.Text);
+            builder.SetAlbum(boxAlbum.Text);
+            builder.SetGenre(boxGenre.Text);
+
+            //Do XHDR build
+            string xhdrAction = boxXhdrAction.Text;
+            switch (xhdrAction)
+            {
+                case "":
+                case "<none>":
+                    break;
+                case "<flush memory>":
+                    builder.XhdrFlushMemory();
+                    break;
+                case "<blank screen>":
+                    builder.XhdrBlankScreen();
+                    break;
+                default: // parse lot ID
+                    if (!int.TryParse(xhdrAction, out int lot))
+                    {
+                        MessageBox.Show("Unable to parse lot ID: " + xhdrAction, "Bad Lot ID", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    builder.XhdrTriggerImage(lot);
+                    break;
+            }
+
+            //Set MIME
+            string mime = boxXhdrMime.Text;
+            if (mime.Contains('<')) // Trim off bracket where comments start
+                mime = mime.Substring(0, mime.IndexOf('<'));
+            mime = mime.Trim(); // Trim whitespace
+            if (mime.Length > 0)
+            {
+                if (!mime.ToLower().StartsWith("0x") || mime.Contains(' '))
+                {
+                    MessageBox.Show("Mime must be a hexidecimal value.", "Bad MIME", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                builder.XhdrSetMime(mime);
+            }
+
             //Send
             UpdateStatus(ConnectionStatus.PROCESSING_COMMAND, "Setting PSD...");
-            PsdSendInfo info = new PsdSendInfo
-            {
-                ExporterAddress = exporterAddress,
-                Title = boxTitle.Text,
-                Artist = boxArtist.Text,
-                Album = boxAlbum.Text,
-                Genre = boxGenre.Text
-            };
-            conn.SendPSDAsync(info).ContinueWith((Task t) =>
+            conn.SendPSDAsync(builder, exporterAddress).ContinueWith((Task t) =>
             {
                 if (t.IsFaulted)
                     UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
@@ -87,6 +124,8 @@ namespace MsacClient.Console
                 boxAlbum.Enabled = ready;
                 boxGenre.Enabled = ready;
                 boxPsdPgm.Enabled = ready;
+                boxXhdrAction.Enabled = ready;
+                boxXhdrMime.Enabled = ready;
                 boxDirectUploadName.Enabled = ready;
                 btnDirectFileUpload.Enabled = ready;
             });

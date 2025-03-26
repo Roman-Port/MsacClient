@@ -11,6 +11,15 @@ namespace MsacClient.XmlData
         [XmlAttribute("mimeType")]
         public string MimeType { get; set; }
 
+        [XmlAttribute("lotId")]
+        public string LotId { get; set; }
+
+        [XmlAttribute("trigger")]
+        public string Trigger { get; set; }
+
+        [XmlAttribute("flushMemory")]
+        public string FlushMemory { get; set; }
+
         [XmlAttribute("blankScreen")]
         public string BlankScreen { get; set; }
     }

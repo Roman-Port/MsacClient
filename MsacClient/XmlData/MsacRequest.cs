@@ -13,5 +13,8 @@ namespace MsacClient.XmlData
         
         [XmlElement("PSD-Fields")]
         public PsdFields PsdFields { get; set; }
+
+        [XmlElement("Lot-Info")]
+        public LotInfo LotInfo { get; set; }
     }
 }

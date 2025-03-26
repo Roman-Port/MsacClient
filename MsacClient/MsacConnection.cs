@@ -4,6 +4,7 @@ using MsacClient.XmlData;
 using System;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -19,8 +20,6 @@ namespace MsacClient
         }
 
         private readonly MsacTransport transport;
-
-        public string DataServiceName { get; set; } = "SLHD1";
 
         private Task<HDRadioEnvelope> SendRequestGetResponse(HDRadioEnvelope request)
         {
@@ -91,7 +90,7 @@ namespace MsacClient
         /// Requests basic status from the MSAC.
         /// </summary>
         /// <returns></returns>
-        public async Task<StatusInfo> RequestStatusAsync()
+        public async Task<StatusInfo> RequestStatusAsync(string dataServiceName = "SLHD1")
         {
             //Create the request body
             HDRadioEnvelope req = new HDRadioEnvelope
@@ -101,7 +100,7 @@ namespace MsacClient
                     MsgInfo = new MsgInfo
                     {
                         MsgType = "Status Request",
-                        DataServiceName = DataServiceName
+                        DataServiceName = dataServiceName
                     }
                 }
             };
@@ -123,21 +122,31 @@ namespace MsacClient
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        public async Task SendPSDAsync(PsdSendInfo info)
+        public Task SendPSDAsync(PsdSendBuilder psd, string exportAddress, string audioChannel = "HD1")
+        {
+            //Validate
+            if (psd == null)
+                throw new ArgumentNullException(nameof(psd));
+            psd.Validate();
+
+            //Build and send
+            return SendPSDAsync(psd.Psd, exportAddress, audioChannel);
+        }
+
+        /// <summary>
+        /// Sends a PSD update.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public async Task SendPSDAsync(PsdFields psd, string exportAddress, string audioChannel = "HD1")
         {
             //Validate request
-            if (info == null)
-                throw new ArgumentNullException(nameof(info));
-            if (info.AudioChannel == null)
-                throw new ArgumentNullException(nameof(info.AudioChannel));
-            if (info.Title == null)
-                throw new ArgumentNullException(nameof(info.Title));
-            if (info.Artist == null)
-                throw new ArgumentNullException(nameof(info.Artist));
-            if (info.Album == null)
-                throw new ArgumentNullException(nameof(info.Album));
-            if (info.Genre == null)
-                throw new ArgumentNullException(nameof(info.Genre));
+            if (psd == null)
+                throw new ArgumentNullException(nameof(psd));
+            if (exportAddress == null)
+                throw new ArgumentNullException(nameof(exportAddress));
+            if (audioChannel == null)
+                throw new ArgumentNullException(nameof(audioChannel));
 
             //Create the request body
             HDRadioEnvelope req = new HDRadioEnvelope
@@ -150,24 +159,10 @@ namespace MsacClient
                         InputFormat = "xml",
                         OutputFormat = "hdp",
                         Protocol = "udp",
-                        Location = info.ExporterAddress,
-                        AudioProgram = info.AudioChannel
+                        Location = exportAddress,
+                        AudioProgram = audioChannel
                     },
-                    PsdFields = new PsdFields
-                    {
-                        Core = new CorePsdField
-                        {
-                            Title = info.Title,
-                            Artist = info.Artist,
-                            Album = info.Album,
-                            Genre = info.Genre
-                        },
-                        Xhdr = new XhdrPsdField
-                        {
-                            MimeType = "0XD9C72536",
-                            BlankScreen = "true"
-                        }
-                    }
+                    PsdFields = psd
                 }
             };
 
@@ -210,6 +205,162 @@ namespace MsacClient
 
             //Send (this will do validation)
             await SendRequestGetResponse(req, buffer, index, count);
+        }
+
+        /// <summary>
+        /// Sends a sync lot. Use this for sending images tied to audio like album art.
+        /// </summary>
+        /// <param name="startTime">The estimated time this image will be displayed.</param>
+        /// <param name="fileName">The filename on the exporter to use.</param>
+        /// <param name="duration">The duration of the item.</param>
+        /// <param name="lotId">The requested lot ID.</param>
+        /// <param name="expiry">The expiration of this lot.</param>
+        /// <param name="dataService">The data service to send this on.</param>
+        /// <param name="triggerType">The type of trigger to use.</param>
+        /// <param name="cancelPrior">If true, cancels other items being sent.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<ISyncSendLot> SyncPreSendAsync(DateTime startTime, string fileName, TimeSpan duration, int lotId, DateTime expiry, string dataService = "AAHD1", SyncSendTriggerType triggerType = SyncSendTriggerType.Passive, bool cancelPrior = false)
+        {
+            //Create the request body
+            HDRadioEnvelope req = new HDRadioEnvelope
+            {
+                MsacRequest = new MsacRequest
+                {
+                    MsgInfo = new MsgInfo
+                    {
+                        MsgType = "Sync Pre Send",
+                        StartTime = Utils.DateTimeToMsacString(startTime),
+                        FileName = fileName,
+                        DataServiceName = dataService,
+                        SongDuration = ((int)duration.TotalSeconds).ToString(),
+                        TriggerType = triggerType.ToString(),
+                        CancelPrior = cancelPrior ? "TRUE" : "FALSE"
+                    },
+                    LotInfo = new LotInfo
+                    {
+                        LotId = lotId.ToString(),
+                        ExpirationDate = Utils.DateTimeToMsacString(expiry)
+                    }
+                }
+            };
+
+            //Send and get response
+            HDRadioEnvelope response = await SendRequestGetResponse(req);
+
+            //Validate
+            if (response.MsacResponse.UniqueTag == null)
+                throw new Exception("Malformed response: Unique tag was not set.");
+            if (response.MsacResponse.LotInfo == null)
+                throw new Exception("Malformed response: LotInfo was not set.");
+            if (response.MsacResponse.LotInfo.LotId == null || !int.TryParse(response.MsacResponse.LotInfo.LotId, out int returnLotId))
+                throw new Exception("Malformed response: Lot ID was either not set or was invalid.");
+
+            //Wrap
+            return new SendingSyncImpl(this, response.MsacResponse.UniqueTag, returnLotId, dataService, response.MsacResponse.MsgInfo.State);
+        }
+
+        class SendingSyncImpl : ISyncSendLot
+        {
+            public SendingSyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state)
+            {
+                this.msac = msac;
+                this.uniqueTag = uniqueTag;
+                this.lotId = lotId;
+                this.dataServiceName = dataServiceName;
+                this.state = state;
+            }
+
+            private readonly MsacConnection msac;
+            private readonly string uniqueTag;
+            private readonly int lotId;
+            private readonly string dataServiceName;
+            private string state;
+
+            public int LotId => lotId;
+            public string State => state;
+
+            /// <summary>
+            /// Takes a response from any state-supplying message and updates the state after verifying it
+            /// </summary>
+            /// <param name="envelope"></param>
+            private void ApplyStateUpdate(HDRadioEnvelope envelope)
+            {
+                if (envelope.MsacResponse == null || envelope.MsacResponse.MsgInfo == null || envelope.MsacResponse.MsgInfo.State == null)
+                    throw new Exception("Malformed response: State not set.");
+                state = envelope.MsacResponse.MsgInfo.State;
+            }
+
+            public async Task RefreshStateAsync()
+            {
+                //Create the request body
+                HDRadioEnvelope req = new HDRadioEnvelope
+                {
+                    MsacRequest = new MsacRequest
+                    {
+                        MsgInfo = new MsgInfo
+                        {
+                            MsgType = "Status Request",
+                            DataServiceName = dataServiceName,
+                            UniqueTag = uniqueTag
+                        }
+                    }
+                };
+
+                //Send and get response (this will also check result code)
+                HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
+
+                //Apply change
+                ApplyStateUpdate(response);
+            }
+
+            public async Task ModifyStartAsync(DateTime start)
+            {
+                //Create the request body
+                HDRadioEnvelope req = new HDRadioEnvelope
+                {
+                    MsacRequest = new MsacRequest
+                    {
+                        MsgInfo = new MsgInfo
+                        {
+                            MsgType = "Modify Start",
+                            StartTime = Utils.DateTimeToMsacString(start),
+                            DataServiceName = dataServiceName,
+                            UniqueTag = uniqueTag
+                        }
+                    }
+                };
+
+                //Send and get response (this will also check result code)
+                HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
+
+                //Apply change
+                ApplyStateUpdate(response);
+            }
+
+            public async Task CancelSendAsync(bool cancelPrior = false)
+            {
+                //Create the request body
+                HDRadioEnvelope req = new HDRadioEnvelope
+                {
+                    MsacRequest = new MsacRequest
+                    {
+                        MsgInfo = new MsgInfo
+                        {
+                            MsgType = "Cancel Send",
+                            DataServiceName = dataServiceName,
+                            UniqueTag = uniqueTag,
+                            CancelPrior = cancelPrior ? "TRUE" : "FALSE"
+                        }
+                    }
+                };
+
+                //Send and get response (this will also check result code)
+                HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
+
+                //Apply change
+                ApplyStateUpdate(response);
+            }
         }
     }
 }

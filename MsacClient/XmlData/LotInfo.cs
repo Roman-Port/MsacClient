@@ -10,5 +10,8 @@ namespace MsacClient.XmlData
     {
         [XmlAttribute("lotId")]
         public string LotId { get; set; }
+
+        [XmlAttribute("expirationDate")]
+        public string ExpirationDate { get; set; }
     }
 }
