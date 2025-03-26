@@ -137,6 +137,7 @@ namespace MsacClient.Console
                 boxSyncFilename.Enabled = ready;
                 boxSyncLotId.Enabled = ready;
                 boxSyncTime.Enabled = ready;
+                btnSyncSetTime.Enabled = ready;
                 btnSyncSend.Enabled = ready;
 
                 //Fire extra
@@ -209,6 +210,11 @@ namespace MsacClient.Console
                         new SyncLotForm(lot).Show();
                     });
             });
+        }
+
+        private void btnSyncSetTime_Click(object sender, EventArgs e)
+        {
+            boxSyncTime.Value = DateTime.Now.AddSeconds(30);
         }
     }
 }

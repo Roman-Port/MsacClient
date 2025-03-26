@@ -53,7 +53,7 @@ namespace MsacClient.Console.Forms
                 {
                     if (t.IsFaulted)
                         MessageBox.Show("Error: " + t.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Close();
+                    boxStatus.Text = lot.State;
                 });
             });
         }

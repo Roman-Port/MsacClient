@@ -73,6 +73,7 @@
             this.boxSyncDataService = new System.Windows.Forms.TextBox();
             this.boxSyncActive = new System.Windows.Forms.CheckBox();
             this.boxSyncCancelPrior = new System.Windows.Forms.CheckBox();
+            this.btnSyncSetTime = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.connectPort)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -435,7 +436,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox3.Location = new System.Drawing.Point(0, 266);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(536, 139);
+            this.groupBox3.Size = new System.Drawing.Size(536, 142);
             this.groupBox3.TabIndex = 7;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Sync Send";
@@ -464,6 +465,7 @@
             this.tableLayoutPanel3.Controls.Add(this.boxSyncActive, 1, 5);
             this.tableLayoutPanel3.Controls.Add(this.boxSyncCancelPrior, 2, 5);
             this.tableLayoutPanel3.Controls.Add(this.btnSyncSend, 3, 5);
+            this.tableLayoutPanel3.Controls.Add(this.btnSyncSetTime, 1, 1);
             this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 16);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
@@ -475,7 +477,7 @@
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(530, 120);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(530, 123);
             this.tableLayoutPanel3.TabIndex = 5;
             // 
             // label9
@@ -490,7 +492,7 @@
             // btnSyncSend
             // 
             this.btnSyncSend.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSyncSend.Location = new System.Drawing.Point(452, 94);
+            this.btnSyncSend.Location = new System.Drawing.Point(452, 97);
             this.btnSyncSend.Name = "btnSyncSend";
             this.btnSyncSend.Size = new System.Drawing.Size(75, 23);
             this.btnSyncSend.TabIndex = 3;
@@ -513,12 +515,11 @@
             // 
             // boxSyncTime
             // 
-            this.tableLayoutPanel3.SetColumnSpan(this.boxSyncTime, 2);
             this.boxSyncTime.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxSyncTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.boxSyncTime.Location = new System.Drawing.Point(3, 16);
             this.boxSyncTime.Name = "boxSyncTime";
-            this.boxSyncTime.Size = new System.Drawing.Size(258, 20);
+            this.boxSyncTime.Size = new System.Drawing.Size(126, 20);
             this.boxSyncTime.TabIndex = 5;
             // 
             // label10
@@ -550,7 +551,7 @@
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(3, 39);
+            this.label12.Location = new System.Drawing.Point(3, 42);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(35, 13);
             this.label12.TabIndex = 9;
@@ -559,7 +560,7 @@
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(267, 39);
+            this.label13.Location = new System.Drawing.Point(267, 42);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(54, 13);
             this.label13.TabIndex = 10;
@@ -570,7 +571,7 @@
             this.tableLayoutPanel3.SetColumnSpan(this.boxSyncExpiry, 2);
             this.boxSyncExpiry.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxSyncExpiry.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.boxSyncExpiry.Location = new System.Drawing.Point(3, 55);
+            this.boxSyncExpiry.Location = new System.Drawing.Point(3, 58);
             this.boxSyncExpiry.Name = "boxSyncExpiry";
             this.boxSyncExpiry.Size = new System.Drawing.Size(258, 20);
             this.boxSyncExpiry.TabIndex = 11;
@@ -579,7 +580,7 @@
             // 
             this.tableLayoutPanel3.SetColumnSpan(this.boxSyncFilename, 2);
             this.boxSyncFilename.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxSyncFilename.Location = new System.Drawing.Point(267, 55);
+            this.boxSyncFilename.Location = new System.Drawing.Point(267, 58);
             this.boxSyncFilename.Name = "boxSyncFilename";
             this.boxSyncFilename.Size = new System.Drawing.Size(260, 20);
             this.boxSyncFilename.TabIndex = 12;
@@ -588,7 +589,7 @@
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(3, 78);
+            this.label14.Location = new System.Drawing.Point(3, 81);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(69, 13);
             this.label14.TabIndex = 13;
@@ -597,7 +598,7 @@
             // boxSyncDataService
             // 
             this.boxSyncDataService.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxSyncDataService.Location = new System.Drawing.Point(3, 94);
+            this.boxSyncDataService.Location = new System.Drawing.Point(3, 97);
             this.boxSyncDataService.Name = "boxSyncDataService";
             this.boxSyncDataService.Size = new System.Drawing.Size(126, 20);
             this.boxSyncDataService.TabIndex = 14;
@@ -607,7 +608,7 @@
             // 
             this.boxSyncActive.AutoSize = true;
             this.boxSyncActive.Dock = System.Windows.Forms.DockStyle.Left;
-            this.boxSyncActive.Location = new System.Drawing.Point(135, 94);
+            this.boxSyncActive.Location = new System.Drawing.Point(135, 97);
             this.boxSyncActive.Name = "boxSyncActive";
             this.boxSyncActive.Size = new System.Drawing.Size(56, 23);
             this.boxSyncActive.TabIndex = 15;
@@ -618,12 +619,24 @@
             // 
             this.boxSyncCancelPrior.AutoSize = true;
             this.boxSyncCancelPrior.Dock = System.Windows.Forms.DockStyle.Left;
-            this.boxSyncCancelPrior.Location = new System.Drawing.Point(267, 94);
+            this.boxSyncCancelPrior.Location = new System.Drawing.Point(267, 97);
             this.boxSyncCancelPrior.Name = "boxSyncCancelPrior";
             this.boxSyncCancelPrior.Size = new System.Drawing.Size(83, 23);
             this.boxSyncCancelPrior.TabIndex = 16;
             this.boxSyncCancelPrior.Text = "Cancel Prior";
             this.boxSyncCancelPrior.UseVisualStyleBackColor = true;
+            // 
+            // btnSyncSetTime
+            // 
+            this.btnSyncSetTime.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnSyncSetTime.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.btnSyncSetTime.Location = new System.Drawing.Point(135, 16);
+            this.btnSyncSetTime.Name = "btnSyncSetTime";
+            this.btnSyncSetTime.Size = new System.Drawing.Size(126, 23);
+            this.btnSyncSetTime.TabIndex = 17;
+            this.btnSyncSetTime.Text = "Now + 30s";
+            this.btnSyncSetTime.UseVisualStyleBackColor = true;
+            this.btnSyncSetTime.Click += new System.EventHandler(this.btnSyncSetTime_Click);
             // 
             // Form1
             // 
@@ -708,6 +721,7 @@
         private System.Windows.Forms.TextBox boxSyncDataService;
         private System.Windows.Forms.CheckBox boxSyncActive;
         private System.Windows.Forms.CheckBox boxSyncCancelPrior;
+        private System.Windows.Forms.Button btnSyncSetTime;
     }
 }
 
