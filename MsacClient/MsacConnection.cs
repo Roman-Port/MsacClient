@@ -21,6 +21,16 @@ namespace MsacClient
 
         private readonly MsacTransport transport;
 
+        /// <summary>
+        /// application/x-hdradio-std/image/image-sync
+        /// </summary>
+        public const string MIME_SYNC = "0xBE4B7536";
+
+        /// <summary>
+        /// application/x-hdradio/image/station-logo
+        /// </summary>
+        public const string MIME_ASYNC = "0xD9C72536";
+
         private Task<HDRadioEnvelope> SendRequestGetResponse(HDRadioEnvelope request)
         {
             return SendRequestGetResponse(request, null, 0, 0);
@@ -220,7 +230,7 @@ namespace MsacClient
         /// <param name="cancelPrior">If true, cancels other items being sent.</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ISyncSendLot> SyncPreSendAsync(DateTime startTime, string fileName, TimeSpan duration, int? lotId, DateTime expiry, string dataService = "AAHD1", SyncSendTriggerType triggerType = SyncSendTriggerType.Passive, bool cancelPrior = false)
+        public async Task<ISyncSendLot> PreSendSyncLotAsync(DateTime startTime, string fileName, TimeSpan duration, int? lotId, DateTime expiry, string dataService = "AAHD1", SyncSendTriggerType triggerType = SyncSendTriggerType.Passive, bool cancelPrior = false)
         {
             //Create the request body
             HDRadioEnvelope req = new HDRadioEnvelope
@@ -260,9 +270,58 @@ namespace MsacClient
             return new SendingSyncImpl(this, response.MsacResponse.UniqueTag, returnLotId, dataService, response.MsacResponse.MsgInfo.State);
         }
 
-        class SendingSyncImpl : ISyncSendLot
+        /// <summary>
+        /// Sends an async lot. Use this for sending background images like station logos.
+        /// This will continue to be sent until it's cancelled or another async send begins on the same data service.
+        /// </summary>
+        /// <param name="fileName">The filename on the exporter to use.</param>
+        /// <param name="lotId">The requested lot ID. Optional.</param>
+        /// <param name="dataService">The data service to send this on.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<IAsyncSendLot> SendAsyncLotAsync(string fileName, int? lotId, string dataService = "SLHD1")
         {
-            public SendingSyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state)
+            //Create the request body
+            HDRadioEnvelope req = new HDRadioEnvelope
+            {
+                MsacRequest = new MsacRequest
+                {
+                    MsgInfo = new MsgInfo
+                    {
+                        MsgType = "Async Send",
+                        FileName = fileName,
+                        DataServiceName = dataService
+                    }
+                }
+            };
+
+            //Add lot ID if specified
+            if (lotId != null)
+            {
+                req.MsacRequest.LotInfo = new LotInfo
+                {
+                    LotId = lotId.Value.ToString()
+                };
+            }
+
+            //Send and get response
+            HDRadioEnvelope response = await SendRequestGetResponse(req);
+
+            //Validate
+            if (response.MsacResponse.UniqueTag == null)
+                throw new Exception("Malformed response: Unique tag was not set.");
+            if (response.MsacResponse.LotInfo == null)
+                throw new Exception("Malformed response: LotInfo was not set.");
+            if (response.MsacResponse.LotInfo.LotId == null || !int.TryParse(response.MsacResponse.LotInfo.LotId, out int returnLotId))
+                throw new Exception("Malformed response: Lot ID was either not set or was invalid.");
+
+            //Wrap
+            return new SendingAsyncImpl(this, response.MsacResponse.UniqueTag, returnLotId, dataService, response.MsacResponse.MsgInfo.State);
+        }
+
+        class SendingAsyncImpl : IAsyncSendLot
+        {
+            public SendingAsyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state)
             {
                 this.msac = msac;
                 this.uniqueTag = uniqueTag;
@@ -271,11 +330,11 @@ namespace MsacClient
                 this.state = state;
             }
 
-            private readonly MsacConnection msac;
-            private readonly string uniqueTag;
-            private readonly int lotId;
-            private readonly string dataServiceName;
-            private string state;
+            protected readonly MsacConnection msac;
+            protected readonly string uniqueTag;
+            protected readonly int lotId;
+            protected readonly string dataServiceName;
+            protected string state;
 
             public int LotId => lotId;
             public string State => state;
@@ -285,7 +344,7 @@ namespace MsacClient
             /// Takes a response from any state-supplying message and updates the state after verifying it
             /// </summary>
             /// <param name="envelope"></param>
-            private void ApplyStateUpdate(HDRadioEnvelope envelope)
+            protected void ApplyStateUpdate(HDRadioEnvelope envelope)
             {
                 if (envelope.MsacResponse == null || envelope.MsacResponse.MsgInfo == null || envelope.MsacResponse.MsgInfo.State == null)
                     throw new Exception("Malformed response: State not set.");
@@ -315,30 +374,6 @@ namespace MsacClient
                 ApplyStateUpdate(response);
             }
 
-            public async Task ModifyStartAsync(DateTime start)
-            {
-                //Create the request body
-                HDRadioEnvelope req = new HDRadioEnvelope
-                {
-                    MsacRequest = new MsacRequest
-                    {
-                        MsgInfo = new MsgInfo
-                        {
-                            MsgType = "Modify Start",
-                            StartTime = Utils.DateTimeToMsacString(start),
-                            DataServiceName = dataServiceName,
-                            UniqueTag = uniqueTag
-                        }
-                    }
-                };
-
-                //Send and get response (this will also check result code)
-                HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
-
-                //Apply change
-                ApplyStateUpdate(response);
-            }
-
             public async Task CancelSendAsync(bool cancelPrior = false)
             {
                 //Create the request body
@@ -352,6 +387,38 @@ namespace MsacClient
                             DataServiceName = dataServiceName,
                             UniqueTag = uniqueTag,
                             CancelPrior = cancelPrior ? "TRUE" : "FALSE"
+                        }
+                    }
+                };
+
+                //Send and get response (this will also check result code)
+                HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
+
+                //Apply change
+                ApplyStateUpdate(response);
+            }
+        }
+
+        class SendingSyncImpl : SendingAsyncImpl, ISyncSendLot
+        {
+            public SendingSyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state) : base(msac, uniqueTag, lotId, dataServiceName, state)
+            {
+
+            }
+
+            public async Task ModifyStartAsync(DateTime start)
+            {
+                //Create the request body
+                HDRadioEnvelope req = new HDRadioEnvelope
+                {
+                    MsacRequest = new MsacRequest
+                    {
+                        MsgInfo = new MsgInfo
+                        {
+                            MsgType = "Modify Start",
+                            StartTime = Utils.DateTimeToMsacString(start),
+                            DataServiceName = dataServiceName,
+                            UniqueTag = uniqueTag
                         }
                     }
                 };

@@ -74,6 +74,15 @@
             this.boxSyncActive = new System.Windows.Forms.CheckBox();
             this.boxSyncCancelPrior = new System.Windows.Forms.CheckBox();
             this.btnSyncSetTime = new System.Windows.Forms.Button();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
+            this.label17 = new System.Windows.Forms.Label();
+            this.boxAsyncLotId = new System.Windows.Forms.TextBox();
+            this.label19 = new System.Windows.Forms.Label();
+            this.boxAsyncFileName = new System.Windows.Forms.TextBox();
+            this.label20 = new System.Windows.Forms.Label();
+            this.boxAsyncDataService = new System.Windows.Forms.TextBox();
+            this.btnAsyncSend = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.connectPort)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -84,6 +93,8 @@
             this.groupBox3.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.boxSyncDuration)).BeginInit();
+            this.groupBox4.SuspendLayout();
+            this.tableLayoutPanel4.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnConnect
@@ -133,7 +144,7 @@
             // btnSendPSD
             // 
             this.btnSendPSD.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSendPSD.Location = new System.Drawing.Point(452, 134);
+            this.btnSendPSD.Location = new System.Drawing.Point(435, 134);
             this.btnSendPSD.Name = "btnSendPSD";
             this.btnSendPSD.Size = new System.Drawing.Size(75, 23);
             this.btnSendPSD.TabIndex = 3;
@@ -165,7 +176,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox1.Location = new System.Drawing.Point(0, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(536, 179);
+            this.groupBox1.Size = new System.Drawing.Size(519, 179);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "PSD Send";
@@ -204,7 +215,7 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(530, 160);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(513, 160);
             this.tableLayoutPanel1.TabIndex = 4;
             // 
             // label1
@@ -221,16 +232,16 @@
             this.boxTitle.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxTitle.Location = new System.Drawing.Point(3, 16);
             this.boxTitle.Name = "boxTitle";
-            this.boxTitle.Size = new System.Drawing.Size(259, 20);
+            this.boxTitle.Size = new System.Drawing.Size(250, 20);
             this.boxTitle.TabIndex = 1;
             this.boxTitle.Text = "KRVX-FM";
             // 
             // boxArtist
             // 
             this.boxArtist.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxArtist.Location = new System.Drawing.Point(268, 16);
+            this.boxArtist.Location = new System.Drawing.Point(259, 16);
             this.boxArtist.Name = "boxArtist";
-            this.boxArtist.Size = new System.Drawing.Size(259, 20);
+            this.boxArtist.Size = new System.Drawing.Size(251, 20);
             this.boxArtist.TabIndex = 2;
             this.boxArtist.Text = "103.1 The Raven";
             // 
@@ -239,21 +250,21 @@
             this.boxAlbum.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxAlbum.Location = new System.Drawing.Point(3, 55);
             this.boxAlbum.Name = "boxAlbum";
-            this.boxAlbum.Size = new System.Drawing.Size(259, 20);
+            this.boxAlbum.Size = new System.Drawing.Size(250, 20);
             this.boxAlbum.TabIndex = 3;
             // 
             // boxGenre
             // 
             this.boxGenre.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxGenre.Location = new System.Drawing.Point(268, 55);
+            this.boxGenre.Location = new System.Drawing.Point(259, 55);
             this.boxGenre.Name = "boxGenre";
-            this.boxGenre.Size = new System.Drawing.Size(259, 20);
+            this.boxGenre.Size = new System.Drawing.Size(251, 20);
             this.boxGenre.TabIndex = 4;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(268, 0);
+            this.label2.Location = new System.Drawing.Point(259, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(30, 13);
             this.label2.TabIndex = 5;
@@ -271,7 +282,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(268, 39);
+            this.label4.Location = new System.Drawing.Point(259, 39);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(36, 13);
             this.label4.TabIndex = 7;
@@ -301,7 +312,7 @@
             "HD8"});
             this.boxPsdPgm.Location = new System.Drawing.Point(3, 134);
             this.boxPsdPgm.Name = "boxPsdPgm";
-            this.boxPsdPgm.Size = new System.Drawing.Size(259, 21);
+            this.boxPsdPgm.Size = new System.Drawing.Size(250, 21);
             this.boxPsdPgm.TabIndex = 10;
             this.boxPsdPgm.Text = "HD1";
             // 
@@ -310,6 +321,8 @@
             this.corePanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.corePanel.AutoScroll = true;
+            this.corePanel.Controls.Add(this.groupBox4);
             this.corePanel.Controls.Add(this.groupBox3);
             this.corePanel.Controls.Add(this.groupBox2);
             this.corePanel.Controls.Add(this.groupBox1);
@@ -326,7 +339,7 @@
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox2.Location = new System.Drawing.Point(0, 179);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(536, 87);
+            this.groupBox2.Size = new System.Drawing.Size(519, 87);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Direct File Upload";
@@ -351,7 +364,7 @@
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(530, 68);
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(513, 68);
             this.tableLayoutPanel2.TabIndex = 5;
             // 
             // label6
@@ -366,7 +379,7 @@
             // btnDirectFileUpload
             // 
             this.btnDirectFileUpload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDirectFileUpload.Location = new System.Drawing.Point(452, 42);
+            this.btnDirectFileUpload.Location = new System.Drawing.Point(435, 42);
             this.btnDirectFileUpload.Name = "btnDirectFileUpload";
             this.btnDirectFileUpload.Size = new System.Drawing.Size(75, 23);
             this.btnDirectFileUpload.TabIndex = 3;
@@ -380,7 +393,7 @@
             this.boxDirectUploadName.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxDirectUploadName.Location = new System.Drawing.Point(3, 16);
             this.boxDirectUploadName.Name = "boxDirectUploadName";
-            this.boxDirectUploadName.Size = new System.Drawing.Size(524, 20);
+            this.boxDirectUploadName.Size = new System.Drawing.Size(507, 20);
             this.boxDirectUploadName.TabIndex = 1;
             // 
             // label7
@@ -395,7 +408,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(268, 78);
+            this.label8.Location = new System.Drawing.Point(259, 78);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(83, 13);
             this.label8.TabIndex = 12;
@@ -411,7 +424,7 @@
             "<flush memory>"});
             this.boxXhdrAction.Location = new System.Drawing.Point(3, 94);
             this.boxXhdrAction.Name = "boxXhdrAction";
-            this.boxXhdrAction.Size = new System.Drawing.Size(259, 21);
+            this.boxXhdrAction.Size = new System.Drawing.Size(250, 21);
             this.boxXhdrAction.TabIndex = 14;
             this.boxXhdrAction.Text = "<none>";
             // 
@@ -423,9 +436,9 @@
             "<none>",
             "0xBE4B7536 <sync, album art>",
             "0xD9C72536 <async, station logo>"});
-            this.boxXhdrMime.Location = new System.Drawing.Point(268, 94);
+            this.boxXhdrMime.Location = new System.Drawing.Point(259, 94);
             this.boxXhdrMime.Name = "boxXhdrMime";
-            this.boxXhdrMime.Size = new System.Drawing.Size(259, 21);
+            this.boxXhdrMime.Size = new System.Drawing.Size(251, 21);
             this.boxXhdrMime.TabIndex = 15;
             // 
             // groupBox3
@@ -436,7 +449,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBox3.Location = new System.Drawing.Point(0, 266);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(536, 142);
+            this.groupBox3.Size = new System.Drawing.Size(519, 142);
             this.groupBox3.TabIndex = 7;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Sync Send";
@@ -477,7 +490,7 @@
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(530, 123);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(513, 123);
             this.tableLayoutPanel3.TabIndex = 5;
             // 
             // label9
@@ -492,7 +505,7 @@
             // btnSyncSend
             // 
             this.btnSyncSend.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSyncSend.Location = new System.Drawing.Point(452, 97);
+            this.btnSyncSend.Location = new System.Drawing.Point(435, 97);
             this.btnSyncSend.Name = "btnSyncSend";
             this.btnSyncSend.Size = new System.Drawing.Size(75, 23);
             this.btnSyncSend.TabIndex = 3;
@@ -503,14 +516,14 @@
             // boxSyncDuration
             // 
             this.boxSyncDuration.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxSyncDuration.Location = new System.Drawing.Point(267, 16);
+            this.boxSyncDuration.Location = new System.Drawing.Point(259, 16);
             this.boxSyncDuration.Maximum = new decimal(new int[] {
             99999,
             0,
             0,
             0});
             this.boxSyncDuration.Name = "boxSyncDuration";
-            this.boxSyncDuration.Size = new System.Drawing.Size(126, 20);
+            this.boxSyncDuration.Size = new System.Drawing.Size(122, 20);
             this.boxSyncDuration.TabIndex = 4;
             // 
             // boxSyncTime
@@ -519,13 +532,13 @@
             this.boxSyncTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
             this.boxSyncTime.Location = new System.Drawing.Point(3, 16);
             this.boxSyncTime.Name = "boxSyncTime";
-            this.boxSyncTime.Size = new System.Drawing.Size(126, 20);
+            this.boxSyncTime.Size = new System.Drawing.Size(122, 20);
             this.boxSyncTime.TabIndex = 5;
             // 
             // label10
             // 
             this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(267, 0);
+            this.label10.Location = new System.Drawing.Point(259, 0);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(73, 13);
             this.label10.TabIndex = 6;
@@ -534,7 +547,7 @@
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(399, 0);
+            this.label11.Location = new System.Drawing.Point(387, 0);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(36, 13);
             this.label11.TabIndex = 7;
@@ -543,9 +556,9 @@
             // boxSyncLotId
             // 
             this.boxSyncLotId.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxSyncLotId.Location = new System.Drawing.Point(399, 16);
+            this.boxSyncLotId.Location = new System.Drawing.Point(387, 16);
             this.boxSyncLotId.Name = "boxSyncLotId";
-            this.boxSyncLotId.Size = new System.Drawing.Size(128, 20);
+            this.boxSyncLotId.Size = new System.Drawing.Size(123, 20);
             this.boxSyncLotId.TabIndex = 8;
             // 
             // label12
@@ -560,7 +573,7 @@
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(267, 42);
+            this.label13.Location = new System.Drawing.Point(259, 42);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(54, 13);
             this.label13.TabIndex = 10;
@@ -573,16 +586,16 @@
             this.boxSyncExpiry.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.boxSyncExpiry.Location = new System.Drawing.Point(3, 58);
             this.boxSyncExpiry.Name = "boxSyncExpiry";
-            this.boxSyncExpiry.Size = new System.Drawing.Size(258, 20);
+            this.boxSyncExpiry.Size = new System.Drawing.Size(250, 20);
             this.boxSyncExpiry.TabIndex = 11;
             // 
             // boxSyncFilename
             // 
             this.tableLayoutPanel3.SetColumnSpan(this.boxSyncFilename, 2);
             this.boxSyncFilename.Dock = System.Windows.Forms.DockStyle.Top;
-            this.boxSyncFilename.Location = new System.Drawing.Point(267, 58);
+            this.boxSyncFilename.Location = new System.Drawing.Point(259, 58);
             this.boxSyncFilename.Name = "boxSyncFilename";
-            this.boxSyncFilename.Size = new System.Drawing.Size(260, 20);
+            this.boxSyncFilename.Size = new System.Drawing.Size(251, 20);
             this.boxSyncFilename.TabIndex = 12;
             this.boxSyncFilename.Text = "..\\data\\remote\\2382b6b19d75f26a04871b95e863ebce.jpg";
             // 
@@ -600,7 +613,7 @@
             this.boxSyncDataService.Dock = System.Windows.Forms.DockStyle.Top;
             this.boxSyncDataService.Location = new System.Drawing.Point(3, 97);
             this.boxSyncDataService.Name = "boxSyncDataService";
-            this.boxSyncDataService.Size = new System.Drawing.Size(126, 20);
+            this.boxSyncDataService.Size = new System.Drawing.Size(122, 20);
             this.boxSyncDataService.TabIndex = 14;
             this.boxSyncDataService.Text = "AAHD1";
             // 
@@ -608,7 +621,7 @@
             // 
             this.boxSyncActive.AutoSize = true;
             this.boxSyncActive.Dock = System.Windows.Forms.DockStyle.Left;
-            this.boxSyncActive.Location = new System.Drawing.Point(135, 97);
+            this.boxSyncActive.Location = new System.Drawing.Point(131, 97);
             this.boxSyncActive.Name = "boxSyncActive";
             this.boxSyncActive.Size = new System.Drawing.Size(56, 23);
             this.boxSyncActive.TabIndex = 15;
@@ -619,7 +632,7 @@
             // 
             this.boxSyncCancelPrior.AutoSize = true;
             this.boxSyncCancelPrior.Dock = System.Windows.Forms.DockStyle.Left;
-            this.boxSyncCancelPrior.Location = new System.Drawing.Point(267, 97);
+            this.boxSyncCancelPrior.Location = new System.Drawing.Point(259, 97);
             this.boxSyncCancelPrior.Name = "boxSyncCancelPrior";
             this.boxSyncCancelPrior.Size = new System.Drawing.Size(83, 23);
             this.boxSyncCancelPrior.TabIndex = 16;
@@ -630,13 +643,120 @@
             // 
             this.btnSyncSetTime.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnSyncSetTime.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btnSyncSetTime.Location = new System.Drawing.Point(135, 16);
+            this.btnSyncSetTime.Location = new System.Drawing.Point(131, 16);
             this.btnSyncSetTime.Name = "btnSyncSetTime";
-            this.btnSyncSetTime.Size = new System.Drawing.Size(126, 23);
+            this.btnSyncSetTime.Size = new System.Drawing.Size(122, 23);
             this.btnSyncSetTime.TabIndex = 17;
             this.btnSyncSetTime.Text = "Now + 30s";
             this.btnSyncSetTime.UseVisualStyleBackColor = true;
             this.btnSyncSetTime.Click += new System.EventHandler(this.btnSyncSetTime_Click);
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.AutoSize = true;
+            this.groupBox4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.groupBox4.Controls.Add(this.tableLayoutPanel4);
+            this.groupBox4.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox4.Location = new System.Drawing.Point(0, 408);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(519, 100);
+            this.groupBox4.TabIndex = 8;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Async Send";
+            // 
+            // tableLayoutPanel4
+            // 
+            this.tableLayoutPanel4.AutoSize = true;
+            this.tableLayoutPanel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tableLayoutPanel4.ColumnCount = 4;
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            this.tableLayoutPanel4.Controls.Add(this.boxAsyncLotId, 1, 3);
+            this.tableLayoutPanel4.Controls.Add(this.label19, 0, 0);
+            this.tableLayoutPanel4.Controls.Add(this.boxAsyncFileName, 0, 1);
+            this.tableLayoutPanel4.Controls.Add(this.boxAsyncDataService, 0, 3);
+            this.tableLayoutPanel4.Controls.Add(this.label20, 0, 2);
+            this.tableLayoutPanel4.Controls.Add(this.label17, 1, 2);
+            this.tableLayoutPanel4.Controls.Add(this.btnAsyncSend, 3, 3);
+            this.tableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel4.Location = new System.Drawing.Point(3, 16);
+            this.tableLayoutPanel4.Name = "tableLayoutPanel4";
+            this.tableLayoutPanel4.RowCount = 4;
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel4.Size = new System.Drawing.Size(513, 81);
+            this.tableLayoutPanel4.TabIndex = 5;
+            // 
+            // label17
+            // 
+            this.label17.AutoSize = true;
+            this.label17.Location = new System.Drawing.Point(131, 39);
+            this.label17.Name = "label17";
+            this.label17.Size = new System.Drawing.Size(36, 13);
+            this.label17.TabIndex = 7;
+            this.label17.Text = "Lot ID";
+            // 
+            // boxAsyncLotId
+            // 
+            this.boxAsyncLotId.Dock = System.Windows.Forms.DockStyle.Top;
+            this.boxAsyncLotId.Location = new System.Drawing.Point(131, 55);
+            this.boxAsyncLotId.Name = "boxAsyncLotId";
+            this.boxAsyncLotId.Size = new System.Drawing.Size(122, 20);
+            this.boxAsyncLotId.TabIndex = 8;
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Location = new System.Drawing.Point(3, 0);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(54, 13);
+            this.label19.TabIndex = 10;
+            this.label19.Text = "File Name";
+            // 
+            // boxAsyncFileName
+            // 
+            this.tableLayoutPanel4.SetColumnSpan(this.boxAsyncFileName, 4);
+            this.boxAsyncFileName.Dock = System.Windows.Forms.DockStyle.Top;
+            this.boxAsyncFileName.Location = new System.Drawing.Point(3, 16);
+            this.boxAsyncFileName.Name = "boxAsyncFileName";
+            this.boxAsyncFileName.Size = new System.Drawing.Size(507, 20);
+            this.boxAsyncFileName.TabIndex = 12;
+            this.boxAsyncFileName.Text = "..\\data\\remote\\SLKRVXFM010101HD1.jpg";
+            // 
+            // label20
+            // 
+            this.label20.AutoSize = true;
+            this.label20.Location = new System.Drawing.Point(3, 39);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(69, 13);
+            this.label20.TabIndex = 13;
+            this.label20.Text = "Data Service";
+            // 
+            // boxAsyncDataService
+            // 
+            this.boxAsyncDataService.Dock = System.Windows.Forms.DockStyle.Top;
+            this.boxAsyncDataService.Location = new System.Drawing.Point(3, 55);
+            this.boxAsyncDataService.Name = "boxAsyncDataService";
+            this.boxAsyncDataService.Size = new System.Drawing.Size(122, 20);
+            this.boxAsyncDataService.TabIndex = 14;
+            this.boxAsyncDataService.Text = "SLHD1";
+            // 
+            // btnAsyncSend
+            // 
+            this.btnAsyncSend.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAsyncSend.Location = new System.Drawing.Point(435, 55);
+            this.btnAsyncSend.Name = "btnAsyncSend";
+            this.btnAsyncSend.Size = new System.Drawing.Size(75, 23);
+            this.btnAsyncSend.TabIndex = 3;
+            this.btnAsyncSend.Text = "Send";
+            this.btnAsyncSend.UseVisualStyleBackColor = true;
+            this.btnAsyncSend.Click += new System.EventHandler(this.btnAsyncSend_Click);
             // 
             // Form1
             // 
@@ -669,6 +789,10 @@
             this.tableLayoutPanel3.ResumeLayout(false);
             this.tableLayoutPanel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.boxSyncDuration)).EndInit();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
+            this.tableLayoutPanel4.ResumeLayout(false);
+            this.tableLayoutPanel4.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -722,6 +846,15 @@
         private System.Windows.Forms.CheckBox boxSyncActive;
         private System.Windows.Forms.CheckBox boxSyncCancelPrior;
         private System.Windows.Forms.Button btnSyncSetTime;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel4;
+        private System.Windows.Forms.TextBox boxAsyncLotId;
+        private System.Windows.Forms.Label label19;
+        private System.Windows.Forms.TextBox boxAsyncFileName;
+        private System.Windows.Forms.TextBox boxAsyncDataService;
+        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.Label label17;
+        private System.Windows.Forms.Button btnAsyncSend;
     }
 }
 

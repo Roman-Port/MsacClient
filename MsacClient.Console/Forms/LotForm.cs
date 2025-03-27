@@ -11,15 +11,15 @@ using System.Windows.Forms;
 
 namespace MsacClient.Console.Forms
 {
-    public partial class SyncLotForm : Form
+    public partial class LotForm : Form
     {
-        public SyncLotForm(ISyncSendLot lot)
+        public LotForm(IAsyncSendLot lot)
         {
             this.lot = lot;
             InitializeComponent();
         }
 
-        private readonly ISyncSendLot lot;
+        private readonly IAsyncSendLot lot;
 
         private void SyncLotForm_Load(object sender, EventArgs e)
         {

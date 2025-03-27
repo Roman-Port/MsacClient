@@ -1,6 +1,6 @@
 ﻿namespace MsacClient.Console.Forms
 {
-    partial class SyncLotForm
+    partial class LotForm
     {
         /// <summary>
         /// Required designer variable.

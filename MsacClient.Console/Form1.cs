@@ -139,6 +139,10 @@ namespace MsacClient.Console
                 boxSyncTime.Enabled = ready;
                 btnSyncSetTime.Enabled = ready;
                 btnSyncSend.Enabled = ready;
+                boxAsyncDataService.Enabled = ready;
+                boxAsyncFileName.Enabled = ready;
+                boxAsyncLotId.Enabled = ready;
+                btnAsyncSend.Enabled = ready;
 
                 //Fire extra
                 if (extra != null)
@@ -198,7 +202,7 @@ namespace MsacClient.Console
             }
 
             //Send
-            conn.SyncPreSendAsync(boxSyncTime.Value, boxSyncFilename.Text, TimeSpan.FromSeconds((int)boxSyncDuration.Value), lotId, boxSyncExpiry.Value, boxSyncDataService.Text, boxSyncActive.Checked ? SyncSendTriggerType.Active : SyncSendTriggerType.Passive, boxSyncCancelPrior.Checked).ContinueWith((Task<ISyncSendLot> t) =>
+            conn.PreSendSyncLotAsync(boxSyncTime.Value, boxSyncFilename.Text, TimeSpan.FromSeconds((int)boxSyncDuration.Value), lotId, boxSyncExpiry.Value, boxSyncDataService.Text, boxSyncActive.Checked ? SyncSendTriggerType.Active : SyncSendTriggerType.Passive, boxSyncCancelPrior.Checked).ContinueWith((Task<ISyncSendLot> t) =>
             {
                 if (t.IsFaulted)
                     UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
@@ -207,7 +211,7 @@ namespace MsacClient.Console
                     {
                         ISyncSendLot lot = t.GetAwaiter().GetResult();
                         boxXhdrAction.Items.Add(lot.LotId);
-                        new SyncLotForm(lot).Show();
+                        new LotForm(lot).Show();
                     });
             });
         }
@@ -215,6 +219,37 @@ namespace MsacClient.Console
         private void btnSyncSetTime_Click(object sender, EventArgs e)
         {
             boxSyncTime.Value = DateTime.Now.AddSeconds(30);
+        }
+
+        private void btnAsyncSend_Click(object sender, EventArgs e)
+        {
+            //Parse lot ID
+            int? lotId = null;
+            if (boxAsyncLotId.Text.Length > 0)
+            {
+                if (int.TryParse(boxAsyncLotId.Text, out int _lot))
+                {
+                    lotId = _lot;
+                }
+                else
+                {
+                    MessageBox.Show("Lot ID is invalid. Specify a number or leave blank", "Invalid Lot ID", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+            //Send
+            conn.SendAsyncLotAsync(boxAsyncFileName.Text, lotId, boxAsyncDataService.Text).ContinueWith((Task<IAsyncSendLot> t) =>
+            {
+                if (t.IsFaulted)
+                    UpdateStatus(ConnectionStatus.CONNECTED, "Failed: " + t.Exception.Message);
+                else
+                    UpdateStatus(ConnectionStatus.CONNECTED, "OK.", () =>
+                    {
+                        IAsyncSendLot lot = t.GetAwaiter().GetResult();
+                        new LotForm(lot).Show();
+                    });
+            });
         }
     }
 }
