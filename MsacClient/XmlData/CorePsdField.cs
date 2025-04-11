@@ -19,5 +19,22 @@ namespace MsacClient.XmlData
 
         [XmlAttribute("album")]
         public string Album { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is CorePsdField c)
+            {
+                return Title == c.Title &&
+                    Artist == c.Artist &&
+                    Album == c.Album &&
+                    Genre == c.Genre;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

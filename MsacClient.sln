@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient", "MsacClient\MsacClient.csproj", "{E0A74126-12BF-4990-8952-D40211D49688}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MsacClient", "MsacClient\MsacClient.csproj", "{E0A74126-12BF-4990-8952-D40211D49688}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient.Console", "MsacClient.Console\MsacClient.Console.csproj", "{B220C0B2-324D-4735-A514-61031CDC6274}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient.Tests", "MsacClient.Tests\MsacClient.Tests.csproj", "{6010049F-23D5-4AC3-9B97-C2695C3F46C5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{B220C0B2-324D-4735-A514-61031CDC6274}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B220C0B2-324D-4735-A514-61031CDC6274}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B220C0B2-324D-4735-A514-61031CDC6274}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

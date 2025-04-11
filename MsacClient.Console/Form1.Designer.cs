@@ -597,7 +597,7 @@
             this.boxSyncFilename.Name = "boxSyncFilename";
             this.boxSyncFilename.Size = new System.Drawing.Size(251, 20);
             this.boxSyncFilename.TabIndex = 12;
-            this.boxSyncFilename.Text = "..\\data\\remote\\2382b6b19d75f26a04871b95e863ebce.jpg";
+            this.boxSyncFilename.Text = "..\\data\\remote\\0eabd7c8c524fa5dc26b4d107e838c84.jpg";
             // 
             // label14
             // 

@@ -12,7 +12,7 @@ using System.Xml.Serialization;
 
 namespace MsacClient
 {
-    public class MsacConnection
+    public class MsacConnection : IMsacConnection
     {
         public MsacConnection(MsacTransport transport)
         {

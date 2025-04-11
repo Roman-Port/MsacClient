@@ -22,5 +22,23 @@ namespace MsacClient.XmlData
 
         [XmlAttribute("blankScreen")]
         public string BlankScreen { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is XhdrPsdField c)
+            {
+                return MimeType == c.MimeType &&
+                    LotId == c.LotId &&
+                    Trigger == c.Trigger &&
+                    FlushMemory == c.FlushMemory &&
+                    BlankScreen == c.BlankScreen;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

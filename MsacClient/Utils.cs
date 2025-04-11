@@ -44,5 +44,29 @@ namespace MsacClient
 
             return dt.ToString("ddd MMM dd HH:mm:ss 'GMT' yyyy");
         }
+
+        /// <summary>
+        /// Gets the absolute difference between the two date times
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        internal static TimeSpan AbsDifference(this DateTime a, DateTime b)
+        {
+            return new TimeSpan(Math.Abs((a - b).Ticks));
+        }
+
+        /// <summary>
+        /// Gets the larger of two TimeSpans
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        internal static TimeSpan Max(this TimeSpan a, TimeSpan b)
+        {
+            if (a > b)
+                return a;
+            return b;
+        }
     }
 }
