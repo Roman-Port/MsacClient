@@ -36,6 +36,7 @@ namespace MsacClient.Utility.Scheduler
         private readonly List<SchedulerList> lists = new List<SchedulerList>();
         private readonly List<ScheduledLot> lots = new List<ScheduledLot>();
         private PsdSendBuilder lastSentPsd;
+        private DateTime latestPsdSendTime; // Only to be accessed by worker, not locked by mutex
 
         /// <summary>
         /// The text to prepend to the filename on the sync send command to the MSAC.
@@ -224,33 +225,87 @@ namespace MsacClient.Utility.Scheduler
         }
 
         /// <summary>
-        /// Processes a tick. This should only be used for debugging.
+        /// Gets the next scheduled tick. Thread safe.
+        /// </summary>
+        public DateTime? NextTick
+        {
+            get
+            {
+                //Lock mutex to prevent the time from being updated
+                nextTickMutex.WaitOne();
+
+                //Save
+                DateTime? nextTick = this.nextTick;
+
+                //Release lock on the tick timer now
+                nextTickMutex.ReleaseMutex();
+
+                return nextTick;
+            }
+        }
+
+        /// <summary>
+        /// Processes a tick and clears the next tick beforehand. Should only be used for debugging.
+        /// </summary>
+        /// <param name="now"></param>
+        public void DebugProcessTick(DateTime now)
+        {
+            //Clear last tick
+            nextTickMutex.WaitOne();
+            lock (nextTickMutex)
+                nextTick = null;
+            nextTickMutex.ReleaseMutex();
+
+            //Process
+            ProcessTick(now);
+        }
+
+        /// <summary>
+        /// Processes a tick. Assumes that the next tick has been cleared.
         /// </summary>
         /// <param name="now"></param>
         public void ProcessTick(DateTime now)
         {
             //Find the latest ID3 item that hasn't been sent
             ScheduledItem? sendItem = null;
-            bool send;
+            ScheduledItem? nextItem = null;
             lock (mutex)
             {
-                //Find latest
+                //Find all relevant items
                 foreach (var item in Items)
                 {
                     //Get items that:
+                    // * Are after the last PSD was sent
                     // * Are started
                     // * Are not expired
-                    if (item.time <= now && (sendItem == null || item.time > sendItem.Value.time))
+                    // * Do NOT match the latest one
+                    if (item.time > latestPsdSendTime && item.time <= now && (sendItem == null || item.time > sendItem.Value.time) && !item.psd.Equals(lastSentPsd))
                         sendItem = item;
                 }
 
-                //If an item is new and not equal to the last id3 sent, send it now
-                send = sendItem != null && !sendItem.Value.psd.Equals(lastSentPsd);
+                //Update last PSD to prevent resending the same one
+                if (sendItem != null)
+                    lastSentPsd = sendItem.Value.psd;
+
+                //Find the next PSD update (after this one, if one was found)
+                DateTime compareTime = now;
+                if (sendItem != null)
+                    compareTime = sendItem.Value.time;
+                var nextQuery = Items.Where(x => x.time > compareTime).OrderBy(x => x.time);
+                if (nextQuery.Count() > 0)
+                    nextItem = nextQuery.FirstOrDefault();
             }
 
             //Send PSD
-            if (send)
-                sendItem.Value.SendPsdAsync(connection);
+            if (sendItem != null)
+            {
+                sendItem.Value.SendPsdAsync(connection).Wait();
+                latestPsdSendTime = sendItem.Value.time;
+            }
+
+            //If the next PSD is known, request that tick time
+            if (nextItem != null)
+                RequestTickAt(nextItem.Value.time);
 
             //Capture lot list
             ScheduledLot[] lots;
@@ -619,7 +674,6 @@ namespace MsacClient.Utility.Scheduler
                 DateTime start;
                 ScheduledLotStatus status;
                 ISyncSendLot lot;
-                DateTime expires;
                 lock (mutex)
                 {
                     cancelled = this.cancelled;
@@ -628,7 +682,6 @@ namespace MsacClient.Utility.Scheduler
                     start = this.start;
                     status = this.status;
                     lot = this.lot;
-                    expires = this.expires;
                 }
 
                 //Send cancel signal to MSAC if requested and sent
@@ -696,11 +749,11 @@ namespace MsacClient.Utility.Scheduler
                 {
                     //Perform send, this will update state from PENDING
                     await PrepareAsync(now);
+                } else if (status == ScheduledLotStatus.PENDING)
+                {
+                    //Set wakeup when we can send this
+                    scheduler.RequestTickAt(PreNotifyTime);
                 }
-
-                //Set next wakeup
-                lock (mutex)
-                    scheduler.RequestTickAt(status == ScheduledLotStatus.PENDING ? PreNotifyTime : expires);
             }
 
             /// <summary>

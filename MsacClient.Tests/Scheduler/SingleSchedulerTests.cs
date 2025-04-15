@@ -63,7 +63,7 @@ namespace MsacClient.Tests.Scheduler
             Assert.IsTrue(conn.EventsPreSendSyncLot.Count == 1);
 
             s.schedList.UpdateItems(new MsacScheduledRequest[0]);
-            s.sched.ProcessTick(s.now);
+            s.sched.DebugProcessTick(s.now);
 
             Assert.IsTrue(conn.EventsPreSendSyncLot.FirstEvent.Event.returnValue.EventsCancel.Count == 1);
         }
@@ -85,7 +85,7 @@ namespace MsacClient.Tests.Scheduler
             {
                 s.request
             });
-            s.sched.ProcessTick(s.now);
+            s.sched.DebugProcessTick(s.now);
 
             Assert.IsTrue(conn.EventsPreSendSyncLot.FirstEvent.Event.returnValue.EventsModifyStart.Count == 1);
         }
@@ -116,7 +116,7 @@ namespace MsacClient.Tests.Scheduler
             };
             IMsacSchedulerList schedList = sched.CreateList("dummy");
 
-            sched.ProcessTick(now);
+            sched.DebugProcessTick(now);
             MsacScheduledRequest request = new MsacScheduledRequest
             {
                 start = now + itemDelay,
@@ -129,7 +129,7 @@ namespace MsacClient.Tests.Scheduler
                 request
             });
 
-            sched.ProcessTick(now);
+            sched.DebugProcessTick(now);
 
             return new Sim
             {

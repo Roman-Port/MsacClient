@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient.Console", "MsacC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient.Tests", "MsacClient.Tests\MsacClient.Tests.csproj", "{6010049F-23D5-4AC3-9B97-C2695C3F46C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsacClient.Simulator", "MsacClient.Simulator\MsacClient.Simulator.csproj", "{56EE89E1-07A1-4167-9682-64DDBD22FA0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6010049F-23D5-4AC3-9B97-C2695C3F46C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56EE89E1-07A1-4167-9682-64DDBD22FA0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56EE89E1-07A1-4167-9682-64DDBD22FA0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56EE89E1-07A1-4167-9682-64DDBD22FA0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56EE89E1-07A1-4167-9682-64DDBD22FA0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
