@@ -61,15 +61,25 @@ namespace MsacClient.Simulator.GUI.Forms
             try
             {
                 //Run
-                new Verifier(result).Verify();
+                Verifier ver = new Verifier(result);
+                ver.Verify();
 
-                //OK
-                passFailLabel.Text = "PASS";
-                passFailLabel.BackColor = Color.Lime;
+                //Check if errors
+                if (ver.FirstError == null)
+                {
+                    //OK
+                    passFailLabel.Text = "PASS";
+                    passFailLabel.BackColor = Color.Lime;
+                } else
+                {
+                    //FAIL
+                    passFailLabel.Text = "FAIL: " + ver.FirstError;
+                    passFailLabel.BackColor = Color.Red;
+                }
             } catch (Exception ex)
             {
                 //Set
-                passFailLabel.Text = "FAIL: " + ex.Message;
+                passFailLabel.Text = "EXCEPTION: " + ex.Message;
                 passFailLabel.BackColor = Color.Red;
             }
         }
@@ -80,9 +90,12 @@ namespace MsacClient.Simulator.GUI.Forms
             {
             }
 
+            public string FirstError { get; set; } = null;
+
             protected override void Fault(string message)
             {
-                throw new Exception(message);
+                if (FirstError == null)
+                    FirstError = message;
             }
         }
     }

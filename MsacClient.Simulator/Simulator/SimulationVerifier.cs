@@ -49,6 +49,7 @@ namespace MsacClient.Simulator.Simulator
         public void Verify()
         {
             VerifyPsds();
+            VerifyLots();
         }
 
         private void VerifyPsds()
@@ -95,10 +96,45 @@ namespace MsacClient.Simulator.Simulator
                         //Check that it arrived on time
                         if (lot.FinalStartTime > oup.Time)
                             Fault($"Lot {lot.LotId} was scheduled to start sending {(lot.FinalStartTime - oup.Time).TotalSeconds} seconds late.");
+
+                        //Check that the lot wasn't ancient
+                        DateTime lotExpiry = lot.FinalStartTime + result.Settings.SchedulerSettings.ImageLifespan;
+                        if (lotExpiry < oup.Time)
+                            Fault($"Lot {lot.LotId} was expired before being sent (expired {(oup.Time - lotExpiry).TotalSeconds} secs before).");
                     }
                 } else if (inp.ImageFilename != null)
                 {
                     Fault("Output image has no lot assigned when there should be an input file.");
+                }
+            }
+        }
+
+        private void VerifyLots()
+        {
+            foreach (var lot in result.Lots)
+            {
+                //Find any associated PSDs
+                SimOutputPsd[] psds = result.Psds.Where(x => x.LotId == lot.LotId).OrderBy(x => x.Time).ToArray();
+                SimOutputPsd firstPsd = psds.FirstOrDefault();
+
+                //If this wasn't cancelled but no delivered PSDs have it, fault
+                if (psds.Length == 0 && !lot.Cancelled)
+                {
+                    Fault($"Lot {lot.LotId} wasn't cancelled but has no PSDs referencing it.");
+                    continue;
+                }
+
+                //Switch depending on if it were cancelled. If not cancelled, assume there is at least one PSD
+                if (!lot.Cancelled)
+                {
+                    //Check that the msac was notified at the correct time
+                    DateTime scheduledMsacNotify = firstPsd.Time - result.Settings.SchedulerSettings.ImagePreNotify;
+                    if (scheduledMsacNotify < result.Settings.Epoch)
+                        Fault($"Test is invalid; Unable to check MSAC delivery time because epoch is after scheduled notify time {scheduledMsacNotify.ToLongTimeString()}.");
+                    if (lot.CreatedAt > scheduledMsacNotify)
+                        Fault($"Lot {lot.LotId} notified the MSAC too late by {(lot.CreatedAt - scheduledMsacNotify).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                    if (lot.CreatedAt < scheduledMsacNotify)
+                        Fault($"Lot {lot.LotId} notified the MSAC too early by {(scheduledMsacNotify - lot.CreatedAt).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
                 }
             }
         }

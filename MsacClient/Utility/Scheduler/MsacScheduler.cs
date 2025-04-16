@@ -745,7 +745,7 @@ namespace MsacClient.Utility.Scheduler
                 }
 
                 //Start send notify if it's within range and has not yet been sent
-                if (!cancelled && status == ScheduledLotStatus.PENDING && start + scheduler.ImagePreNotify >= now)
+                if (!cancelled && status == ScheduledLotStatus.PENDING && PreNotifyTime <= now)
                 {
                     //Perform send, this will update state from PENDING
                     await PrepareAsync(now);
