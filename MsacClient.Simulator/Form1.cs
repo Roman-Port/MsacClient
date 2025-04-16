@@ -33,17 +33,24 @@ namespace MsacClient.Simulator
                         {
                             new MsacSimEvent
                             {
-                                Start = TimeSpan.FromMinutes(10),
-                                End = TimeSpan.FromMinutes(12),
+                                Start = TimeSpan.FromMinutes(10.2),
+                                End = TimeSpan.FromMinutes(12.3),
                                 Comment = "Test 1",
                                 ImageFilename = "img1"
                             },
                             new MsacSimEvent
                             {
-                                Start = TimeSpan.FromMinutes(14),
-                                End = TimeSpan.FromMinutes(16),
+                                Start = TimeSpan.FromMinutes(12.3),
+                                End = TimeSpan.FromMinutes(14.6),
                                 Comment = "Test 2",
                                 ImageFilename = "img2"
+                            },
+                            new MsacSimEvent
+                            {
+                                Start = TimeSpan.FromMinutes(50),
+                                End = TimeSpan.FromMinutes(51),
+                                Comment = "Test 3",
+                                ImageFilename = "img3"
                             }
                         }
                     }

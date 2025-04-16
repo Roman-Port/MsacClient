@@ -1,4 +1,5 @@
 ﻿using MsacClient.Simulator.Simulator;
+using MsacClient.Simulator.Simulator.Output;
 using MsacClient.Simulator.Simulator.Settings;
 using System;
 using System.Collections.Generic;
@@ -46,9 +47,43 @@ namespace MsacClient.Simulator.GUI.Forms
             } while (!run.Process());
             Invoke((MethodInvoker)delegate
             {
-                graph.Text = "";
-                graph.Data = run.Result;
+                SimulationAvailable(run.Result);
             });
+        }
+
+        private void SimulationAvailable(SimOutput result)
+        {
+            //Set graph
+            graph.Text = "";
+            graph.Data = result;
+
+            //Verify
+            try
+            {
+                //Run
+                new Verifier(result).Verify();
+
+                //OK
+                passFailLabel.Text = "PASS";
+                passFailLabel.BackColor = Color.Lime;
+            } catch (Exception ex)
+            {
+                //Set
+                passFailLabel.Text = "FAIL: " + ex.Message;
+                passFailLabel.BackColor = Color.Red;
+            }
+        }
+
+        class Verifier : SimulationVerifier
+        {
+            public Verifier(SimOutput result) : base(result)
+            {
+            }
+
+            protected override void Fault(string message)
+            {
+                throw new Exception(message);
+            }
         }
     }
 }

@@ -32,6 +32,11 @@ namespace MsacClient.Simulator.Simulator.Output
         public DateTime InitialStartTime { get; set; }
 
         /// <summary>
+        /// The time this was finally sent at, or cancelled at
+        /// </summary>
+        public DateTime FinalStartTime { get; set; }
+
+        /// <summary>
         /// The duration of the event.
         /// </summary>
         public TimeSpan Duration { get; set; }
@@ -40,6 +45,11 @@ namespace MsacClient.Simulator.Simulator.Output
         /// The expiry given to the MSAC.
         /// </summary>
         public DateTime Expiry { get; set; }
+
+        /// <summary>
+        /// True if this was finally cancelled.
+        /// </summary>
+        public bool Cancelled { get; set; }
 
         /// <summary>
         /// Events related to this lot.

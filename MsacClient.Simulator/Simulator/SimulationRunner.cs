@@ -198,6 +198,7 @@ namespace MsacClient.Simulator.Simulator
                     Filename = fileName,
                     CreatedAt = ctx.simTime,
                     InitialStartTime = startTime,
+                    FinalStartTime = startTime,
                     Duration = duration,
                     Expiry = expiry
                 };
@@ -272,6 +273,10 @@ namespace MsacClient.Simulator.Simulator
                     Parameter = start
                 });
 
+                //Set
+                if (ctx.simTime < output.FinalStartTime)
+                    output.FinalStartTime = ctx.simTime;
+
                 //Delay
                 return CreateDelayedResult(ctx.settings.TimingSettings.EditSyncSendDelay);
             }
@@ -289,6 +294,13 @@ namespace MsacClient.Simulator.Simulator
                     Time = ctx.simTime,
                     EventType = SimOutputLotEventType.CANCEL
                 });
+
+                //Set
+                if (ctx.simTime < output.FinalStartTime)
+                {
+                    output.FinalStartTime = ctx.simTime;
+                    output.Cancelled = true;
+                }
 
                 //Delay
                 return CreateDelayedResult(ctx.settings.TimingSettings.CancelSyncSendDelay);

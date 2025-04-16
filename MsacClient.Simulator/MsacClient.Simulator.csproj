@@ -105,6 +105,7 @@
     <Compile Include="Simulator\Settings\MsacSimTest.cs" />
     <Compile Include="Simulator\Settings\MsacSimTimingSettings.cs" />
     <Compile Include="Simulator\SimulationRunner.cs" />
+    <Compile Include="Simulator\SimulationVerifier.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
