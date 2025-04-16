@@ -16,9 +16,15 @@ namespace MsacClient.Simulator.GUI.Controls
     {
         public SimResultsGraphControl()
         {
+            //Set
             UserScrollable = true;
+
+            //Create pens
+            tickGridlinePen = new Pen(Color.Red, 1);
+            tickGridlinePen.DashPattern = new float[] { 5, 10 };
         }
 
+        private readonly Pen tickGridlinePen;
         private SimOutput data;
         private List<RenderTimeline> timelines = new List<RenderTimeline>();
         private List<RenderId3> id3s = new List<RenderId3>();
@@ -101,6 +107,16 @@ namespace MsacClient.Simulator.GUI.Controls
 
             //Render gridlines
             PaintTimeGridlines(pe.Graphics);
+
+            //Render ticks
+            if (data != null)
+            {
+                foreach (var t in data.Ticks)
+                {
+                    int pos = TimeToPixel(t - data.Settings.Epoch);
+                    pe.Graphics.DrawLine(tickGridlinePen, pos, 0, pos, ClientSize.Height);
+                }
+            }
 
             //Render timelines
             foreach (var t in timelines)
@@ -220,18 +236,21 @@ namespace MsacClient.Simulator.GUI.Controls
                     bool cancelled = false;
                     foreach (var e in l.Events)
                     {
-                        if (e.Time < sendTime)
+                        switch (e.EventType)
                         {
-                            switch (e.EventType)
-                            {
-                                case SimOutputLotEventType.MODIFY_START:
-                                    sendTime = e.Parameter;
-                                    break;
-                                case SimOutputLotEventType.CANCEL:
-                                    cancelled = true;
-                                    sendTime = e.Time;
-                                    break;
-                            }
+                            case SimOutputLotEventType.MODIFY_START:
+                                sendTime = e.Parameter;
+                                tl.Checkpoints.Add(new RenderCheckpoint
+                                {
+                                    Time = e.Time - data.Settings.Epoch,
+                                    Color = colorMarkerFinishSend,
+                                    Text = "Start Modified"
+                                });
+                                break;
+                            case SimOutputLotEventType.CANCEL:
+                                cancelled = true;
+                                sendTime = e.Time;
+                                break;
                         }
                     }
 

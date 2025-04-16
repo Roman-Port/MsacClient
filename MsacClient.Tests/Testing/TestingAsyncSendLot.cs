@@ -16,6 +16,7 @@ namespace MsacClient.Tests.Testing
 
         private readonly int lotId;
         private readonly TestingEventList<CancelEvent> eventsCancel;
+        private bool cancelled;
 
         public TestingEventList<CancelEvent> EventsCancel => eventsCancel;
 
@@ -25,12 +26,15 @@ namespace MsacClient.Tests.Testing
 
         public int LotId => lotId;
 
+        public bool Cancelled => cancelled;
+
         public Task CancelSendAsync(bool cancelPrior = false)
         {
             eventsCancel.AddEvent(new CancelEvent
             {
                 cancelPrior = cancelPrior
             });
+            cancelled = true;
             return Task.CompletedTask;
         }
 

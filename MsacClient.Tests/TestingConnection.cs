@@ -58,7 +58,7 @@ namespace MsacClient.Tests
                 returnedLotId = lotId.Value;
 
             //Create result
-            TestingSyncSendLot returnValue = new TestingSyncSendLot(state, returnedLotId);
+            TestingSyncSendLot returnValue = new TestingSyncSendLot(state, returnedLotId, startTime, duration);
 
             //Add to list
             eventsPreSendSyncLot.AddEvent(new PreSendSyncLotEvent

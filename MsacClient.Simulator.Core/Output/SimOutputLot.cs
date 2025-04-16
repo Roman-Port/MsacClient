@@ -27,6 +27,11 @@ namespace MsacClient.Simulator.Core.Output
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
+        /// The virtual time that the start time was updated at.
+        /// </summary>
+        public DateTime LastTimeUpdate { get; set; }
+
+        /// <summary>
         /// The initial time that the start was set to.
         /// </summary>
         public DateTime InitialStartTime { get; set; }

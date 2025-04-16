@@ -267,7 +267,7 @@ namespace MsacClient
                 throw new Exception("Malformed response: Lot ID was either not set or was invalid.");
 
             //Wrap
-            return new SendingSyncImpl(this, response.MsacResponse.UniqueTag, returnLotId, dataService, response.MsacResponse.MsgInfo.State);
+            return new SendingSyncImpl(this, response.MsacResponse.UniqueTag, returnLotId, dataService, response.MsacResponse.MsgInfo.State, startTime, duration);
         }
 
         /// <summary>
@@ -335,10 +335,13 @@ namespace MsacClient
             protected readonly int lotId;
             protected readonly string dataServiceName;
             protected string state;
+            private bool cancelled;
 
             public int LotId => lotId;
             public string State => state;
             public string Tag => uniqueTag;
+
+            public bool Cancelled => cancelled;
 
             /// <summary>
             /// Takes a response from any state-supplying message and updates the state after verifying it
@@ -396,15 +399,24 @@ namespace MsacClient
 
                 //Apply change
                 ApplyStateUpdate(response);
+                cancelled = true;
             }
         }
 
         class SendingSyncImpl : SendingAsyncImpl, ISyncSendLot
         {
-            public SendingSyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state) : base(msac, uniqueTag, lotId, dataServiceName, state)
+            public SendingSyncImpl(MsacConnection msac, string uniqueTag, int lotId, string dataServiceName, string state, DateTime start, TimeSpan duration) : base(msac, uniqueTag, lotId, dataServiceName, state)
             {
-
+                this.start = start;
+                this.duration = duration;
             }
+
+            private DateTime start;
+            private TimeSpan duration;
+
+            public DateTime Start => start;
+
+            public TimeSpan Duration => duration;
 
             public async Task ModifyStartAsync(DateTime start)
             {
@@ -425,6 +437,9 @@ namespace MsacClient
 
                 //Send and get response (this will also check result code)
                 HDRadioEnvelope response = await msac.SendRequestGetResponse(req);
+
+                //Update start
+                this.start = start;
 
                 //Apply change
                 ApplyStateUpdate(response);

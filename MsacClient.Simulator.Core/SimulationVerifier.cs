@@ -127,14 +127,17 @@ namespace MsacClient.Simulator.Core
                 //Switch depending on if it were cancelled. If not cancelled, assume there is at least one PSD
                 if (!lot.Cancelled)
                 {
-                    //Check that the msac was notified at the correct time
-                    DateTime scheduledMsacNotify = firstPsd.Time - result.Settings.SchedulerSettings.ImagePreNotify;
-                    if (scheduledMsacNotify < result.Settings.Epoch)
-                        Fault($"Test is invalid; Unable to check MSAC delivery time because epoch is after scheduled notify time {scheduledMsacNotify.ToLongTimeString()}.");
-                    if (lot.CreatedAt > scheduledMsacNotify)
-                        Fault($"Lot {lot.LotId} notified the MSAC too late by {(lot.CreatedAt - scheduledMsacNotify).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
-                    if (lot.CreatedAt < scheduledMsacNotify)
-                        Fault($"Lot {lot.LotId} notified the MSAC too early by {(scheduledMsacNotify - lot.CreatedAt).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                    //Check that the msac was notified at the correct time. Only functions if it was NOT moved
+                    if (lot.InitialStartTime == lot.FinalStartTime) // Only perform this test if it was NOT moved
+                    {
+                        DateTime scheduledMsacNotify = firstPsd.Time - result.Settings.SchedulerSettings.ImagePreNotify;
+                        if (scheduledMsacNotify < result.Settings.Epoch)
+                            Fault($"Test is invalid; Unable to check MSAC delivery time because epoch is after scheduled notify time {scheduledMsacNotify.ToLongTimeString()}.");
+                        if (lot.CreatedAt > scheduledMsacNotify)
+                            Fault($"Lot {lot.LotId} notified the MSAC too late by {(lot.CreatedAt - scheduledMsacNotify).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                        if (lot.CreatedAt < scheduledMsacNotify)
+                            Fault($"Lot {lot.LotId} notified the MSAC too early by {(scheduledMsacNotify - lot.CreatedAt).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                    }
                 }
             }
         }

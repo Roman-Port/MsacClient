@@ -73,7 +73,7 @@ namespace MsacClient.Tests.Scheduler
         }
 
         /// <summary>
-        /// Tests reusing image within a short time
+        /// Tests reusing image within a short time within the same request
         /// </summary>
         [TestMethod]
         public void TestReuseImageShort()

@@ -22,6 +22,11 @@ namespace MsacClient.Entities
         string Tag { get; }
 
         /// <summary>
+        /// Returns true if this lot is cancelled.
+        /// </summary>
+        bool Cancelled { get; }
+
+        /// <summary>
         /// Requests a state update from the server.
         /// </summary>
         /// <returns></returns>

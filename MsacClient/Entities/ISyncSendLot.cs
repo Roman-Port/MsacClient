@@ -11,6 +11,16 @@ namespace MsacClient.Entities
     public interface ISyncSendLot : IAsyncSendLot
     {
         /// <summary>
+        /// Gets the set start send time.
+        /// </summary>
+        DateTime Start { get; }
+
+        /// <summary>
+        /// Gets the duration of the send.
+        /// </summary>
+        TimeSpan Duration { get; }
+
+        /// <summary>
         /// Sends a request to modify the scheduled start time of this event.
         /// </summary>
         /// <param name="start">The new start time.</param>

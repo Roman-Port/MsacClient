@@ -2,6 +2,7 @@
 using MsacClient.Exceptions;
 using MsacClient.Utility.Upload;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -34,9 +35,14 @@ namespace MsacClient.Utility.Scheduler
         private readonly MsacUploadManager uploader;
         private readonly object mutex = new object();
         private readonly List<SchedulerList> lists = new List<SchedulerList>();
-        private readonly List<ScheduledLot> lots = new List<ScheduledLot>();
         private PsdSendBuilder lastSentPsd;
-        private DateTime latestPsdSendTime; // Only to be accessed by worker, not locked by mutex
+
+        /* START ACCESSED BY WORKER ONLY - NO MUTEX NEEDED */
+
+        private DateTime latestPsdSendTime;
+        private List<ActiveLot> activeLots = new List<ActiveLot>();
+
+        /* END ACCESSED BY WORKER ONLY - NO MUTEX NEEDED */
 
         /// <summary>
         /// The text to prepend to the filename on the sync send command to the MSAC.
@@ -71,7 +77,7 @@ namespace MsacClient.Utility.Scheduler
         /// <summary>
         /// Gets all items across all lists.
         /// </summary>
-        private ScheduledItem[] Items
+        private MsacScheduledRequestFromList[] Items
         {
             get
             {
@@ -83,12 +89,16 @@ namespace MsacClient.Utility.Scheduler
                         total += l.Items.Length;
 
                     //Build new array
-                    ScheduledItem[] items = new ScheduledItem[total];
+                    MsacScheduledRequestFromList[] items = new MsacScheduledRequestFromList[total];
                     int i = 0;
                     foreach (var l in lists)
                     {
-                        l.Items.CopyTo(items, i);
-                        i += l.Items.Length;
+                        foreach (var itm in l.Items)
+                            items[i++] = new MsacScheduledRequestFromList
+                            {
+                                req = itm,
+                                list = l
+                            };
                     }
 
                     //Sanity check
@@ -200,7 +210,7 @@ namespace MsacClient.Utility.Scheduler
                     nextTickMutex.ReleaseMutex();
 
                     //Tick
-                    ProcessTick(now);
+                    ProcessTick(now).Wait();
 
                     //Go back to the start of the loop
                     continue;
@@ -257,70 +267,194 @@ namespace MsacClient.Utility.Scheduler
             nextTickMutex.ReleaseMutex();
 
             //Process
-            ProcessTick(now);
+            ProcessTick(now).Wait();
+        }
+        
+        /// <summary>
+        /// Find active lots matching the PSD, ordered by the nearest to the start time.
+        /// </summary>
+        /// <param name="psd"></param>
+        /// <returns></returns>
+        private ActiveLot[] FindMatchingLots(MsacScheduledRequest psd)
+        {
+            var result = activeLots.Where(x => x.Filename == psd.image.Filename && !x.Lot.Cancelled && TimesOverlap(x.Start, x.End, psd.start, psd.end))
+                        .OrderBy(x => x.Start.AbsDifference(psd.start)) // find nearest to start
+                        .ToArray();
+            return result;
         }
 
         /// <summary>
         /// Processes a tick. Assumes that the next tick has been cleared.
         /// </summary>
         /// <param name="now"></param>
-        private void ProcessTick(DateTime now)
+        private async Task ProcessTick(DateTime now)
         {
             //Process PSD work
-            ProcessTickPsd(now);
-
-            //Capture lot list
-            ScheduledLot[] lots;
-            lock (mutex)
-                lots = this.lots.ToArray();
-
-            //Tick all lots
-            foreach (var l in lots)
-                l.TickAsync(now).Wait();
+            MsacScheduledRequest[] psds = await ProcessTickPsd(now);
 
             //Remove expired lots
-            lock (mutex)
+            foreach (var lot in activeLots.Where(x => x.End < now).ToArray())
+                activeLots.Remove(lot);
+
+            //Find all PSDs and generate/update LOTs
+            //Get PSD list sorted by time (already done) then sorted by the referenced filename. This is to aid with easier combining of items.
+            var psdsScan = psds.Where(x => x.start >= now && x.image != null).OrderBy(x => x.image.Filename).ToArray();
+            List<ActiveLot> usedLots = new List<ActiveLot>();
+            int psdScanIndex = 0;
+            while (psdScanIndex < psdsScan.Length)
             {
-                foreach (var l in lots)
+                //Save first and last using this
+                MsacScheduledRequest first = psdsScan[psdScanIndex];
+                List<MsacScheduledRequest> matchingPsds = new List<MsacScheduledRequest>(); //PSDs with matching images
+                while (psdScanIndex < psdsScan.Length && psdsScan[psdScanIndex].image.Filename == first.image.Filename)
+                    matchingPsds.Add(psdsScan[psdScanIndex++]);
+
+                //Use these to get the start/duration time of this LOT
+                DateTime end = matchingPsds.LastOrDefault().end;
+
+                //Loop through each matching PSD list but only ones within pre-schedule range
+                foreach (var psd in matchingPsds.Where(x => x.start - ImagePreNotify <= now))
                 {
-                    if (l.IsExpired(now))
-                        this.lots.Remove(l);
+                    //Get start
+                    DateTime start = psd.start;
+
+                    //Check if this overlaps with any existing LOTs with matching filenames
+                    TimeSpan duration = end - start;
+                    var matchingLots = FindMatchingLots(psd);
+
+                    //If no lots were found, schedule a new one
+                    if (matchingLots.Length == 0)
+                    {
+                        //Snap to the duration of the last lot within ImageTimespan
+                        //TODO...
+
+                        //Notify MSAC
+                        ActiveLot newLot = await ScheduleNewLotAsync(psd.image, start, duration, now);
+                        activeLots.Add(newLot);
+                        usedLots.Add(newLot);
+                    } else
+                    {
+                        //Get the lot
+                        ActiveLot lot = matchingLots[0];
+
+                        //Only if the LOT hasn't already started sending, adjust timing
+                        if (lot.Start > now.AddSeconds(10) && lot.Start != start)
+                        {
+                            //If the LOT start time is after start, relocate it
+                            if (lot.Start > start)
+                                await lot.Lot.ModifyStartAsync(start);
+
+                            //If the LOT start time is before start and it hasn't been touched yet, relocate it
+                            if (lot.Start < start && !usedLots.Contains(lot))
+                                await lot.Lot.ModifyStartAsync(start);
+                        }
+
+                        //Use this lot
+                        if (!usedLots.Contains(lot))
+                            usedLots.Add(lot);
+                    }
                 }
             }
+
+            //Cancel and remove any lots that were not referenced
+            foreach (var unusedLot in activeLots.Where(x => x.Start > latestPsdSendTime && !x.Lot.Cancelled && !usedLots.Contains(x)).ToArray())
+            {
+                //Attempt to cancel
+                try
+                {
+                    await unusedLot.Lot.CancelSendAsync();
+                } catch (Exception ex)
+                {
+                    //Send error event but otherwise assume it was cancelled.
+                    MsacSendError?.Invoke(unusedLot.Image, "Failed to cancel send; Will not retry.", ex);
+                }
+
+                //Remove
+                activeLots.Remove(unusedLot);
+            }
+
+            //Schedule next wakeup to the first PSD's LOT that needs to be sent - May or may not be redundant
+            var nextWakeupLot = psds.Where(x => x.start - ImagePreNotify > now && x.image != null);
+            if (nextWakeupLot.Count() > 0)
+                RequestTickAt(nextWakeupLot.FirstOrDefault().start - ImagePreNotify);
         }
 
         /// <summary>
-        /// Does PSD ticking
+        /// Sends the lot to the MSAC and returns it.
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="start"></param>
+        /// <param name="duration"></param>
+        /// <param name="now"></param>
+        /// <returns></returns>
+        private async Task<ActiveLot> ScheduleNewLotAsync(IMsacScheduledImage image, DateTime start, TimeSpan duration, DateTime now)
+        {
+            //Upload to the MSAC
+            await uploader.UploadImageAsync(image, now);
+
+            //Begin send
+            ISyncSendLot lot = await connection.PreSendSyncLotAsync(
+                start,
+                FilenamePrefix + image.Filename,
+                duration,
+                null,
+                now.AddYears(1),
+                image.DataService
+            );
+
+            //Wrap
+            return new ActiveLot(this, image, lot);
+        }
+
+        /// <summary>
+        /// Checks if times overlap each other.
+        /// </summary>
+        /// <param name="aStart"></param>
+        /// <param name="aEnd"></param>
+        /// <param name="bStart"></param>
+        /// <param name="bEnd"></param>
+        /// <returns></returns>
+        private static bool TimesOverlap(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd)
+        {
+            return (aStart <= bEnd) && (bStart <= aEnd);
+        }
+
+        /// <summary>
+        /// Does PSD ticking.
         /// </summary>
         /// <param name="now"></param>
-        private void ProcessTickPsd(DateTime now)
+        private async Task<MsacScheduledRequest[]> ProcessTickPsd(DateTime now)
         {
             //Find the latest ID3 item that hasn't been sent
-            ScheduledItem? sendItem = null;
-            ScheduledItem? nextItem = null;
+            MsacScheduledRequestFromList? sendItem = null;
+            MsacScheduledRequestFromList? nextItem = null;
+            MsacScheduledRequestFromList[] items;
             lock (mutex)
             {
+                //Collect all items
+                items = Items.OrderBy(x => x.req.start).ToArray();
+
                 //Find all relevant items
-                foreach (var item in Items)
+                foreach (var item in items)
                 {
                     //Get items that:
                     // * Are after the last PSD was sent
                     // * Are started
                     // * Are not expired
                     // * Do NOT match the latest one
-                    if (item.time > latestPsdSendTime && item.time <= now && (sendItem == null || item.time > sendItem.Value.time) && !item.psd.Equals(lastSentPsd))
+                    if (item.req.start > latestPsdSendTime && item.req.start <= now && (sendItem == null || item.req.start > sendItem.Value.req.start) && !item.req.psd.Equals(lastSentPsd))
                         sendItem = item;
                 }
 
                 //Update last PSD to prevent resending the same one
                 if (sendItem != null)
-                    lastSentPsd = sendItem.Value.psd;
+                    lastSentPsd = sendItem.Value.req.psd;
 
                 //Find the next PSD update (after this one, if one was found)
                 DateTime compareTime = now;
                 if (sendItem != null)
-                    compareTime = sendItem.Value.time;
-                var nextQuery = Items.Where(x => x.time > compareTime).OrderBy(x => x.time);
+                    compareTime = sendItem.Value.req.start;
+                var nextQuery = items.Where(x => x.req.start > compareTime);
                 if (nextQuery.Count() > 0)
                     nextItem = nextQuery.FirstOrDefault();
             }
@@ -328,57 +462,49 @@ namespace MsacClient.Utility.Scheduler
             //Send PSD
             if (sendItem != null)
             {
-                sendItem.Value.SendPsdAsync(connection).Wait();
-                latestPsdSendTime = sendItem.Value.time;
+                //Branch on if this has an image or not
+                PsdSendBuilder psd = sendItem.Value.req.psd.Clone();
+
+                //If it has an image, apply it
+                bool appliedImage = false;
+                if (sendItem.Value.req.image != null)
+                {
+                    //Clone the PSD
+                    psd = psd.Clone();
+
+                    //Find image
+                    ActiveLot lot = FindMatchingLots(sendItem.Value.req).FirstOrDefault();
+                    if (lot != null)
+                    {
+                        //Set image
+                        psd.XhdrTriggerImage(lot.Lot);
+                        psd.XhdrSetMime(MsacConnection.MIME_SYNC);
+                        appliedImage = true;
+                    } else
+                    {
+                        //TODO: Raise alarm here!
+                    }
+                }
+
+                //If didn't apply image, clear
+                if (!appliedImage)
+                {
+                    psd.XhdrBlankScreen();
+                    psd.XhdrSetMime(MsacConnection.MIME_ASYNC);
+                }
+
+                //Send
+                await connection.SendPSDAsync(psd, sendItem.Value.list.ExporterAddress, sendItem.Value.list.AudioChannel);
+
+                //Update time
+                latestPsdSendTime = sendItem.Value.req.start;
             }
 
             //If the next PSD is known, request that tick time
             if (nextItem != null)
-                RequestTickAt(nextItem.Value.time);
-        }
+                RequestTickAt(nextItem.Value.req.start);
 
-        /// <summary>
-        /// Cancels all lots no longer in use.
-        /// </summary>
-        private void SyncLots()
-        {
-            lock (mutex)
-            {
-                //Create lists
-                List<ScheduledLot> unusedLots = new List<ScheduledLot>(lots);
-
-                //Remove
-                foreach (var i in Items)
-                {
-                    if (i.lot != null)
-                        unusedLots.Remove(i.lot);
-                }
-
-                //Cancel remaining lots
-                foreach (var l in unusedLots)
-                    l.Cancel();
-            }
-        }
-
-        /// <summary>
-        /// Gets or creates a lot that will be valid at a specified time.
-        /// </summary>
-        /// <returns></returns>
-        private ScheduledLot GetLot(DateTime start, TimeSpan duration, IMsacScheduledImage image)
-        {
-            lock (mutex)
-            {
-                //Search for matching lots
-                ScheduledLot lot = lots.Where(x => x.EstimatedExpiration >= (start+duration) && x.Image.Filename == image.Filename).FirstOrDefault();
-                if (lot != null)
-                    return lot;
-
-                //Create a new lot
-                lot = new ScheduledLot(this, image, start, duration);
-                lots.Add(lot);
-
-                return lot;
-            }
+            return items.Select(x => x.req).ToArray();
         }
 
         /// <summary>
@@ -396,7 +522,7 @@ namespace MsacClient.Utility.Scheduler
             private readonly MsacScheduler scheduler;
             private readonly string exporterAddress;
             private readonly string audioChannel;
-            private ScheduledItem[] items = new ScheduledItem[0]; // Protected by scheduler mutex
+            private MsacScheduledRequest[] items = new MsacScheduledRequest[0]; // Protected by scheduler mutex
 
             /// <summary>
             /// The exporter address given at creation.
@@ -411,61 +537,20 @@ namespace MsacClient.Utility.Scheduler
             /// <summary>
             /// Assumes in scheduler mutex.
             /// </summary>
-            public ScheduledItem[] Items => items;
+            public MsacScheduledRequest[] Items => items;
 
             public void UpdateItems(IEnumerable<MsacScheduledRequest> requests)
             {
+                //TODO: Look for overlapping items
+
+                //Enter mutex
                 lock (scheduler.mutex)
                 {
-                    //Convert all requests to scheduled events
-                    items = requests.Select((MsacScheduledRequest evt) =>
-                    {
-                        //Calculate duration
-                        TimeSpan duration = evt.end - evt.start;
-
-                        //If an image is specified, get or create a lot
-                        ScheduledLot lot = null;
-                        if (evt.image != null)
-                            lot = scheduler.GetLot(evt.start, duration, evt.image);
-
-                        //Adjust start/duration to fill both old timing as well as current timing
-                        if (lot != null)
-                        {
-                            //Get the old end time
-                            DateTime end = lot.Start + lot.Duration;
-
-                            //If this is before we end, update
-                            if (end < evt.end)
-                                end = evt.end;
-
-                            //Calculate new start
-                            DateTime start = lot.Start;
-                            if (evt.start < start)
-                                start = evt.start;
-
-                            //Apply
-                            lot.Duration = end - start;
-                            lot.Start = start;
-                        }
-
-                        //Wrap into an item
-                        return new ScheduledItem(this, evt.start, evt.psd, lot);
-                    }).ToArray();
-
-                    //Sync lots
-                    scheduler.SyncLots();
-
-                    //Find the earliest event and request a tick then
-                    DateTime earliest = DateTime.MaxValue;
-                    foreach (var e in items)
-                    {
-                        if (e.time < earliest)
-                            earliest = e.time;
-                    }
+                    //Set
+                    this.items = requests.ToArray();
 
                     //Request tick
-                    if (earliest != DateTime.MaxValue)
-                        scheduler.RequestTickAt(earliest);
+                    scheduler.RequestTick();
                 }
             }
 
@@ -477,383 +562,57 @@ namespace MsacClient.Utility.Scheduler
             }
         }
 
-        struct ScheduledItem
+        struct MsacScheduledRequestFromList
         {
-            public ScheduledItem(SchedulerList list, DateTime time, PsdSendBuilder psd, ScheduledLot lot)
-            {
-                this.list = list;
-                this.time = time;
-                this.psd = psd;
-                this.lot = lot;
-            }
-
-            public readonly SchedulerList list;
-            public readonly DateTime time;
-            public readonly PsdSendBuilder psd;
-            public readonly ScheduledLot lot;
-
-            /// <summary>
-            /// Sends the PSD to the MSAC
-            /// </summary>
-            /// <returns></returns>
-            public Task SendPsdAsync(IMsacConnection conn)
-            {
-                //Clone the PSD
-                PsdSendBuilder psd = this.psd.Clone();
-
-                //Set image
-                if (lot != null && lot.TryGetLot(out ISyncSendLot msacLot))
-                {
-                    psd.XhdrTriggerImage(msacLot);
-                    psd.XhdrSetMime(MsacConnection.MIME_SYNC);
-                } else
-                {
-                    psd.XhdrBlankScreen();
-                    psd.XhdrSetMime(MsacConnection.MIME_ASYNC);
-                }
-
-                //Send
-                return conn.SendPSDAsync(psd, list.ExporterAddress, list.AudioChannel);
-            }
+            public MsacScheduledRequest req;
+            public SchedulerList list;
         }
 
         /// <summary>
-        /// Represents an image that is pending.
+        /// Lot that has been sent to the server.
         /// </summary>
-        class ScheduledLot
+        class ActiveLot
         {
-            public ScheduledLot(MsacScheduler scheduler, IMsacScheduledImage image, DateTime start, TimeSpan duration)
+            public ActiveLot(MsacScheduler scheduler, IMsacScheduledImage image, ISyncSendLot lot)
             {
                 this.scheduler = scheduler;
                 this.image = image;
-                this.start = start;
-                this.duration = duration;
+                this.lot = lot;
             }
 
             private readonly MsacScheduler scheduler;
             private readonly IMsacScheduledImage image;
-            private readonly object mutex = new object();
-            private bool cancelled; // Permanent flag set when it's time to cancel
-            private bool serverCancelled; // The state of cancellation on the server side
-            private DateTime serverStart; // The state of start on the server side
-            private DateTime start;
-            private TimeSpan duration;
-            private ScheduledLotStatus status = ScheduledLotStatus.PENDING;
-            private ISyncSendLot lot; // Only valid if status == SENT
-            private DateTime expires; // Set when status is anything but PENDING
+            private readonly ISyncSendLot lot;
 
             /// <summary>
-            /// Gets the image this belongs to.
+            /// The send start time of this LOT.
+            /// </summary>
+            public DateTime Start => lot.Start;
+
+            /// <summary>
+            /// The send duration of this LOT.
+            /// </summary>
+            public TimeSpan Duration => lot.Duration;
+
+            /// <summary>
+            /// The end send time of this LOT.
+            /// </summary>
+            public DateTime End => Start + Duration;
+
+            /// <summary>
+            /// Associated LOT.
+            /// </summary>
+            public ISyncSendLot Lot => lot;
+
+            /// <summary>
+            /// Associated image.
             /// </summary>
             public IMsacScheduledImage Image => image;
 
             /// <summary>
-            /// Gets the time when this client will send the notification to the MSAC to send.
+            /// The image filename to check for matches.
             /// </summary>
-            public DateTime PreNotifyTime => Start - scheduler.ImagePreNotify;
-
-            /// <summary>
-            /// Gets the estimated expiration time, regardless of state.
-            /// </summary>
-            public DateTime EstimatedExpiration
-            {
-                get
-                {
-                    lock (mutex)
-                    {
-                        if (status == ScheduledLotStatus.PENDING)
-                            return start + scheduler.ImageLifespan.Max(duration); // Truly an estimate
-                        else
-                            return expires; // Not an estimate
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Gets the start of the event.
-            /// </summary>
-            public DateTime Start
-            {
-                get
-                {
-                    lock (mutex)
-                        return start;
-                }
-                set
-                {
-                    bool notify;
-                    lock (mutex)
-                    {
-                        notify = value != start;
-                        start = value;
-                    }
-                    if (notify)
-                        scheduler.RequestTick();
-                }
-            }
-
-            /// <summary>
-            /// Gets the duration of the event.
-            /// </summary>
-            public TimeSpan Duration
-            {
-                get
-                {
-                    lock (mutex)
-                        return duration;
-                }
-                set
-                {
-                    lock (mutex)
-                        duration = value;
-                }
-            }
-
-            /// <summary>
-            /// The status of this lot.
-            /// </summary>
-            public ScheduledLotStatus Status
-            {
-                get
-                {
-                    lock (mutex)
-                        return status;
-                }
-                private set
-                {
-                    lock (mutex)
-                        status = value;
-                }
-            }
-
-            /// <summary>
-            /// Gets if this lot is one of:
-            /// * Sent and ImageLifespan has expired
-            /// * Errored and RetryTime has expired
-            /// * This has been cancelled both locally and server-side
-            /// </summary>
-            public bool IsExpired(DateTime now)
-            {
-                lock (mutex)
-                {
-                    if (status != ScheduledLotStatus.PENDING)
-                        return now > expires;
-                    return cancelled && serverCancelled;
-                }
-            }
-
-            /// <summary>
-            /// Cancels the send of this lot.
-            /// </summary>
-            public void Cancel()
-            {
-                bool notify;
-                lock (mutex)
-                {
-                    notify = !cancelled;
-                    cancelled = true;
-                }
-                if (notify)
-                    scheduler.RequestTick();
-            }
-
-            /// <summary>
-            /// Gets the lot if it is available
-            /// </summary>
-            /// <param name="lot"></param>
-            /// <returns></returns>
-            public bool TryGetLot(out ISyncSendLot lot)
-            {
-                lock (mutex)
-                {
-                    lot = this.lot;
-                    return lot != null;
-                }
-            }
-
-            /// <summary>
-            /// Ticks on the worker thread.
-            /// </summary>
-            /// <returns></returns>
-            public async Task TickAsync(DateTime now)
-            {
-                //Capture state in mutex
-                bool cancelled;
-                bool serverCancelled;
-                DateTime serverStart;
-                DateTime start;
-                ScheduledLotStatus status;
-                ISyncSendLot lot;
-                lock (mutex)
-                {
-                    cancelled = this.cancelled;
-                    serverCancelled = this.serverCancelled;
-                    serverStart = this.serverStart;
-                    start = this.start;
-                    status = this.status;
-                    lot = this.lot;
-                }
-
-                //Send cancel signal to MSAC if requested and sent
-                if (cancelled && !serverCancelled)
-                {
-                    //Attempt to send signal
-                    if (lot != null)
-                    {
-                        try
-                        {
-                            await lot.CancelSendAsync();
-                            serverCancelled = true;
-                        }
-                        catch (MsacBadStatusException ex)
-                        {
-                            //Assume that the MSAC just doesn't know of this lot and don't attempt to cancel again
-                            scheduler.MsacSendError?.Invoke(image, "MSAC responded with failure after cancelling image; Will not retry.", ex);
-                            serverCancelled = true;
-                        }
-                        catch (Exception ex)
-                        {
-                            //Assume that there was a network error and try again shortly
-                            scheduler.MsacSendError?.Invoke(image, "Error sending image cancellation; Will retry...", ex);
-                            serverCancelled = false;
-                        }
-                    } else
-                    {
-                        //Server never even knew
-                        serverCancelled = true;
-                    }
-
-                    //Update state
-                    lock (mutex)
-                        this.serverCancelled = serverCancelled;
-                }
-
-                //Send timing update signal to MSAC if requested and sent
-                if (start.AbsDifference(serverStart) > scheduler.ImageFloatingJitter && lot != null)
-                {
-                    //Attempt to send signal
-                    try
-                    {
-                        await lot.ModifyStartAsync(start);
-                        serverStart = start;
-                    }
-                    catch (MsacBadStatusException ex)
-                    {
-                        //Assume that the MSAC just doesn't know of this lot and don't attempt to cancel again
-                        scheduler.MsacSendError?.Invoke(image, "MSAC responded with failure after sending image timing update; Will not retry.", ex);
-                        serverStart = start;
-                    }
-                    catch (Exception ex)
-                    {
-                        //Assume that there was a network error and try again shortly
-                        scheduler.MsacSendError?.Invoke(image, "Error sending image timing update; Will retry...", ex);
-                    }
-
-                    //Update state
-                    lock (mutex)
-                        this.serverStart = serverStart;
-                }
-
-                //Start send notify if it's within range and has not yet been sent
-                if (!cancelled && status == ScheduledLotStatus.PENDING && PreNotifyTime <= now)
-                {
-                    //Perform send, this will update state from PENDING
-                    await PrepareAsync(now);
-                } else if (status == ScheduledLotStatus.PENDING)
-                {
-                    //Set wakeup when we can send this
-                    scheduler.RequestTickAt(PreNotifyTime);
-                }
-            }
-
-            /// <summary>
-            /// Notifies the MSAC of the image. This is performed ahead of time, typically ~5 mins.
-            /// This should only be called on the worker and is expected to handle any errors itself.
-            /// </summary>
-            /// <returns></returns>
-            private async Task PrepareAsync(DateTime now)
-            {
-                //Check state
-                if (status != ScheduledLotStatus.PENDING)
-                    throw new Exception("Invalid state to send image.");
-
-                //Get data
-                DateTime start;
-                TimeSpan duration;
-                lock (mutex)
-                {
-                    start = this.start;
-                    duration = this.duration;
-                }
-
-                //Catch upload problems
-                ISyncSendLot lot = null;
-                string errorText = "Failed to load image.";
-                Exception errorException = null;
-                try
-                {
-                    //Upload to the MSAC
-                    await scheduler.uploader.UploadImageAsync(image, now);
-
-                    //Begin send
-                    errorText = "Failed to send command to MSAC.";
-                    lot = await scheduler.connection.PreSendSyncLotAsync(
-                        start,
-                        scheduler.FilenamePrefix + image.Filename,
-                        duration,
-                        null,
-                        now.AddYears(1),
-                        image.DataService
-                    );
-                }
-                catch (Exception ex)
-                {
-                    //Set error
-                    errorException = ex;
-                }
-
-                //Update state
-                bool success = lot != null && errorException == null;
-                lock (mutex)
-                {
-                    //Update status and expiry based on if an error occured
-                    if (success)
-                    {
-                        serverStart = start;
-                        expires = start + scheduler.ImageLifespan.Max(duration);
-                        status = ScheduledLotStatus.SENT;
-                    } else
-                    {
-                        expires = start + scheduler.ErrorDelay;
-                        status = ScheduledLotStatus.ERROR;
-                    }
-
-                    //Set lot
-                    this.lot = lot;
-                }
-
-                //Send error event if there was one
-                if (success)
-                    scheduler.MsacSendError?.Invoke(image, errorText, errorException);
-            }
-        }
-
-        enum ScheduledLotStatus
-        {
-            /// <summary>
-            /// The lot is still waiting to be sent to the JMSAC.
-            /// </summary>
-            PENDING,
-
-            /// <summary>
-            /// The JMSAC has the lot. Lot ID is valid.
-            /// </summary>
-            SENT,
-
-            /// <summary>
-            /// Failed to send the lot.
-            /// </summary>
-            ERROR
+            public string Filename => image.Filename;
         }
     }
 }

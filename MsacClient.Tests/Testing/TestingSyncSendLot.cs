@@ -8,14 +8,22 @@ namespace MsacClient.Tests.Testing
 {
     public class TestingSyncSendLot : TestingAsyncSendLot, ISyncSendLot
     {
-        public TestingSyncSendLot(SimulatedState state, int lotId) : base(state, lotId)
+        public TestingSyncSendLot(SimulatedState state, int lotId, DateTime start, TimeSpan duration) : base(state, lotId)
         {
             eventsModifyStart = new TestingEventList<ModifyStartEvent>(state);
+            this.start = start;
+            this.duration = duration;
         }
 
         private readonly TestingEventList<ModifyStartEvent> eventsModifyStart;
+        private DateTime start;
+        private TimeSpan duration;
 
         public TestingEventList<ModifyStartEvent> EventsModifyStart => eventsModifyStart;
+
+        public DateTime Start => start;
+
+        public TimeSpan Duration => duration;
 
         public Task ModifyStartAsync(DateTime start)
         {
@@ -23,6 +31,7 @@ namespace MsacClient.Tests.Testing
             {
                 start = start
             });
+            this.start = start;
             return Task.CompletedTask;
         }
     }

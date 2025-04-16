@@ -23,6 +23,11 @@ namespace MsacClient.Simulator.Core.Output
         public DateTime LastTick { get; set; }
 
         /// <summary>
+        /// Holds timestamps of all ticks performed.
+        /// </summary>
+        public List<DateTime> Ticks { get; set; } = new List<DateTime>();
+
+        /// <summary>
         /// Lots created in this simulation.
         /// </summary>
         public List<SimOutputLot> Lots { get; set; } = new List<SimOutputLot>();

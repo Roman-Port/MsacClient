@@ -74,13 +74,16 @@ namespace MsacClient.Simulator.Core
         {
             //Find the next timeline event after the simulated time
             MsacSimEventList nextTimelineEvent = settings.Timeline.OrderBy(x => x.Time).Where(x => SettingTimeToSimTime(x.Time) >= simTime).FirstOrDefault();
+            DateTime nextTimelineEventTime = DateTime.MaxValue;
+            if (nextTimelineEvent != null)
+                nextTimelineEventTime = SettingTimeToSimTime(nextTimelineEvent.Time);
 
             //Determine the next time to execute
             DateTime next = simTime.AddMinutes(1); // Start with the +1 minute failsafe built into the scheduler worker
             if (sched.NextTick.HasValue && sched.NextTick.Value < next) // If the next scheduled tick is closer than the default, apply
                 next = sched.NextTick.Value;
-            if (nextTimelineEvent != null && nextTimelineEvent != lastTimelineEvent && SettingTimeToSimTime(nextTimelineEvent.Time) > simTime && SettingTimeToSimTime(nextTimelineEvent.Time) < next) // If the next event is closer than the default but still in the future, apply
-                next = SettingTimeToSimTime(nextTimelineEvent.Time);
+            if (nextTimelineEvent != null && nextTimelineEvent != lastTimelineEvent && nextTimelineEventTime > simTime && nextTimelineEventTime < next) // If the next event is closer than the default but still in the future, apply
+                next = nextTimelineEventTime;
 
             //Constrain to not go back in time
             if (next < simTime)
@@ -93,11 +96,14 @@ namespace MsacClient.Simulator.Core
             //Update state
             simTime = next;
             output.LastTick = simTime;
-            lastTimelineEvent = nextTimelineEvent;
+            output.Ticks.Add(simTime);
 
             //If this matches the next timeline event, execute it
-            if (nextTimelineEvent != null && simTime >= SettingTimeToSimTime(nextTimelineEvent.Time)) // Should never be greater than it, but use as a failsafe
+            if (nextTimelineEvent != null && simTime >= nextTimelineEventTime) // Should never be greater than it, but use as a failsafe
+            {
+                lastTimelineEvent = nextTimelineEvent;
                 list.UpdateItems(ConvertListToRequests(nextTimelineEvent));
+            }
 
             //Process a tick
             sched.DebugProcessTick(simTime);
@@ -197,6 +203,7 @@ namespace MsacClient.Simulator.Core
                     LotId = lotId,
                     Filename = fileName,
                     CreatedAt = ctx.simTime,
+                    LastTimeUpdate = ctx.simTime,
                     InitialStartTime = startTime,
                     FinalStartTime = startTime,
                     Duration = duration,
@@ -205,7 +212,7 @@ namespace MsacClient.Simulator.Core
                 ctx.output.Lots.Add(output);
 
                 //Create simulated lot
-                SimulatedSyncLot result = new SimulatedSyncLot(ctx, output);
+                SimulatedSyncLot result = new SimulatedSyncLot(ctx, output, startTime, duration);
 
                 //Delay
                 return CreateDelayedResult<ISyncSendLot>(ctx.settings.TimingSettings.StartSyncSendDelay, result);
@@ -248,14 +255,18 @@ namespace MsacClient.Simulator.Core
 
         class SimulatedSyncLot : ISyncSendLot
         {
-            public SimulatedSyncLot(SimulationRunner ctx, SimOutputLot output)
+            public SimulatedSyncLot(SimulationRunner ctx, SimOutputLot output, DateTime start, TimeSpan duration)
             {
                 this.ctx = ctx;
                 this.output = output;
+                this.start = start;
+                this.duration = duration;
             }
 
             private readonly SimulationRunner ctx;
             private readonly SimOutputLot output;
+            private DateTime start;
+            private TimeSpan duration;
 
             public string State => throw new NotSupportedException();
 
@@ -263,8 +274,26 @@ namespace MsacClient.Simulator.Core
 
             public int LotId => output.LotId;
 
+            public DateTime Start => start;
+
+            public TimeSpan Duration => duration;
+
+            public bool Cancelled => output.Cancelled;
+
             public Task ModifyStartAsync(DateTime start)
             {
+                //Check if cancelled
+                if (Cancelled)
+                    throw new Exception("Attempted to modify start of event that was cancelled.");
+
+                //Check if this has already started sending
+                if (ctx.simTime >= output.FinalStartTime)
+                    throw new Exception("Attempted to modify start of event already being sent.");
+
+                //Check if it's being changed
+                if (start == this.start)
+                    throw new Exception("Attempted to change start time to the already set value.");
+
                 //Add event
                 output.Events.Add(new SimOutputLotEvent
                 {
@@ -274,8 +303,9 @@ namespace MsacClient.Simulator.Core
                 });
 
                 //Set
-                if (ctx.simTime < output.FinalStartTime)
-                    output.FinalStartTime = ctx.simTime;
+                output.FinalStartTime = start;
+                this.start = start;
+                output.LastTimeUpdate = ctx.simTime;
 
                 //Delay
                 return CreateDelayedResult(ctx.settings.TimingSettings.EditSyncSendDelay);
@@ -288,6 +318,14 @@ namespace MsacClient.Simulator.Core
 
             public Task CancelSendAsync(bool cancelPrior = false)
             {
+                //Check if already cancelled
+                if (Cancelled)
+                    throw new Exception("Cancelling already cancelled event.");
+
+                //If after it would've sent, throw error
+                if (ctx.simTime >= output.FinalStartTime)
+                    throw new Exception("Attempted to cancel image already being sent.");
+
                 //Add event
                 output.Events.Add(new SimOutputLotEvent
                 {

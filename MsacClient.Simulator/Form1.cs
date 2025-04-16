@@ -24,33 +24,85 @@ namespace MsacClient.Simulator
             MsacSimTest settings = new MsacSimTest
             {
                 Label = "Test",
-                Timeline = new List<MsacSimEventList>()
+                /*Timeline = new List<MsacSimEventList>()
                 {
                     new MsacSimEventList
                     {
-                        Time = TimeSpan.FromSeconds(0),
-                        Events = new List<MsacSimEvent>
+                        Time = Utility.Time(0, 0, 0),
+                        Events = new List<MsacSimEvent>()
                         {
                             new MsacSimEvent
                             {
-                                Start = TimeSpan.FromMinutes(10.2),
-                                End = TimeSpan.FromMinutes(12.3),
-                                Comment = "Test 1",
+                                Start = Utility.Time(0, 10, 0),
+                                Length = Utility.Time(0, 2, 0),
+                                Comment = "a",
                                 ImageFilename = "img1"
                             },
                             new MsacSimEvent
                             {
-                                Start = TimeSpan.FromMinutes(12.3),
-                                End = TimeSpan.FromMinutes(14.6),
-                                Comment = "Test 2",
+                                Start = Utility.Time(0, 12, 0),
+                                Length = Utility.Time(0, 1, 0),
+                                Comment = "b",
+                                ImageFilename = "img2"
+                            }
+                        }
+                    },
+                    new MsacSimEventList
+                    {
+                        Time = Utility.Time(0, 8, 0),
+                        Events = new List<MsacSimEvent>()
+                        {
+                            new MsacSimEvent
+                            {
+                                Start = Utility.Time(0, 10, 0),
+                                Length = Utility.Time(0, 2, 0),
+                                Comment = "a",
+                                ImageFilename = "img1"
+                            },
+                            new MsacSimEvent
+                            {
+                                Start = Utility.Time(0, 12, 0),
+                                Length = Utility.Time(0, 1, 0),
+                                Comment = "b",
                                 ImageFilename = "img2"
                             },
                             new MsacSimEvent
                             {
-                                Start = TimeSpan.FromMinutes(50),
-                                End = TimeSpan.FromMinutes(51),
-                                Comment = "Test 3",
-                                ImageFilename = "img3"
+                                Start = Utility.Time(0, 13, 0),
+                                Length = Utility.Time(0, 1, 0),
+                                Comment = "c",
+                                ImageFilename = "img1"
+                            }
+                        }
+                    }
+                }*/
+                Timeline = new List<MsacSimEventList>()
+                {
+                    new MsacSimEventList
+                    {
+                        Time = Utility.Time(0, 0, 0),
+                        Events = new List<MsacSimEvent>()
+                        {
+                            new MsacSimEvent
+                            {
+                                Start = Utility.Time(0, 10, 0),
+                                Length = Utility.Time(0, 5, 0),
+                                Comment = "a",
+                                ImageFilename = "img1"
+                            }
+                        }
+                    },
+                    new MsacSimEventList
+                    {
+                        Time = Utility.Time(0, 9, 30),
+                        Events = new List<MsacSimEvent>()
+                        {
+                            new MsacSimEvent
+                            {
+                                Start = Utility.Time(0, 10, 1),
+                                Length = Utility.Time(0, 5, 0),
+                                Comment = "a",
+                                ImageFilename = "img1"
                             }
                         }
                     }
