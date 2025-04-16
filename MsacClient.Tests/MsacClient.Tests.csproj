@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MsacClient.Simulator.Core\MsacClient.Simulator.Core.csproj" />
     <ProjectReference Include="..\MsacClient\MsacClient.csproj" />
   </ItemGroup>
 

@@ -65,7 +65,7 @@
             this.timeline.End = System.TimeSpan.Parse("00:01:30");
             this.timeline.Location = new System.Drawing.Point(0, 23);
             this.timeline.Name = "timeline";
-            this.timeline.SimEvents = new MsacClient.Simulator.Simulator.Settings.MsacSimEvent[0];
+            this.timeline.SimEvents = new MsacClient.Simulator.Core.Settings.MsacSimEvent[0];
             this.timeline.Size = new System.Drawing.Size(573, 28);
             this.timeline.TabIndex = 2;
             this.timeline.Text = "simEventPreviewControl1";

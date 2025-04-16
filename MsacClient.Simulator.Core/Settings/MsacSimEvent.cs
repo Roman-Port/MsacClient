@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator.Settings
+namespace MsacClient.Simulator.Core.Settings
 {
     /// <summary>
     /// A simulated MsacScheduledRequest
@@ -20,6 +20,15 @@ namespace MsacClient.Simulator.Simulator.Settings
         /// End time of this event relative to the epoch.
         /// </summary>
         public TimeSpan End { get; set; } = TimeSpan.Zero;
+
+        /// <summary>
+        /// Virtual setter for length
+        /// </summary>
+        public TimeSpan Length
+        {
+            get => End - Start;
+            set => End = Start + value;
+        }
 
         /// <summary>
         /// Comment sent to the simulated PSD.

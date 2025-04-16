@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator.Settings
+namespace MsacClient.Simulator.Core.Settings
 {
     /// <summary>
     /// Represents a list of events at a specified time.

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator.Output
+namespace MsacClient.Simulator.Core.Output
 {
     /// <summary>
     /// File direct send.

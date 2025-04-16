@@ -93,19 +93,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Simulator\Output\SimOutput.cs" />
-    <Compile Include="Simulator\Output\SimOutputLot.cs" />
-    <Compile Include="Simulator\Output\SimOutputLotEvent.cs" />
-    <Compile Include="Simulator\Output\SimOutputLotEventType.cs" />
-    <Compile Include="Simulator\Output\SimOutputPsd.cs" />
-    <Compile Include="Simulator\Output\SimOutputUpload.cs" />
-    <Compile Include="Simulator\Settings\MsacSimEvent.cs" />
-    <Compile Include="Simulator\Settings\MsacSimEventList.cs" />
-    <Compile Include="Simulator\Settings\MsacSimSchedulerSettings.cs" />
-    <Compile Include="Simulator\Settings\MsacSimTest.cs" />
-    <Compile Include="Simulator\Settings\MsacSimTimingSettings.cs" />
-    <Compile Include="Simulator\SimulationRunner.cs" />
-    <Compile Include="Simulator\SimulationVerifier.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -144,6 +131,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MsacClient.Simulator.Core\MsacClient.Simulator.Core.csproj">
+      <Project>{74f8a9eb-d99f-4c47-8471-f352d7a11ee2}</Project>
+      <Name>MsacClient.Simulator.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MsacClient\MsacClient.csproj">
       <Project>{e0a74126-12bf-4990-8952-d40211d49688}</Project>
       <Name>MsacClient</Name>

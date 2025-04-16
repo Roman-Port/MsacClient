@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator.Settings
+namespace MsacClient.Simulator.Core.Settings
 {
     /// <summary>
     /// Simulated timings for the emulated MSAC connection

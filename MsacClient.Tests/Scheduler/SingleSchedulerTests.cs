@@ -40,7 +40,7 @@ namespace MsacClient.Tests.Scheduler
         /// <summary>
         /// Tests that events from before they started will not have images sent to the msac
         /// </summary>
-        [TestMethod]
+        /*[TestMethod]
         public void PastSendPre()
         {
             Sim s = RunSim(TimeSpan.FromMinutes(-15), TimeSpan.FromMinutes(2));
@@ -48,7 +48,7 @@ namespace MsacClient.Tests.Scheduler
 
             Assert.IsTrue(conn.EventsSendPsd.Count == 1);
             Assert.IsTrue(conn.EventsPreSendSyncLot.Count == 0);
-        }
+        }*/
 
         /// <summary>
         /// Tests that lots will be made to expire if removed

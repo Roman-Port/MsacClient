@@ -1,6 +1,6 @@
 ﻿using MsacClient.Entities;
-using MsacClient.Simulator.Simulator.Output;
-using MsacClient.Simulator.Simulator.Settings;
+using MsacClient.Simulator.Core.Output;
+using MsacClient.Simulator.Core.Settings;
 using MsacClient.Utility.Scheduler;
 using MsacClient.Utility.Upload;
 using MsacClient.XmlData;
@@ -11,12 +11,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator
+namespace MsacClient.Simulator.Core
 {
     /// <summary>
     /// Class that will simulate the MSAC scheduler
     /// </summary>
-    class SimulationRunner
+    public class SimulationRunner
     {
         public SimulationRunner(MsacSimTest settings)
         {

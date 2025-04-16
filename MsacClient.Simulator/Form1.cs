@@ -1,5 +1,5 @@
 ﻿using MsacClient.Simulator.GUI;
-using MsacClient.Simulator.Simulator.Settings;
+using MsacClient.Simulator.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

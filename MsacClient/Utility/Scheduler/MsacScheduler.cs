@@ -264,7 +264,36 @@ namespace MsacClient.Utility.Scheduler
         /// Processes a tick. Assumes that the next tick has been cleared.
         /// </summary>
         /// <param name="now"></param>
-        public void ProcessTick(DateTime now)
+        private void ProcessTick(DateTime now)
+        {
+            //Process PSD work
+            ProcessTickPsd(now);
+
+            //Capture lot list
+            ScheduledLot[] lots;
+            lock (mutex)
+                lots = this.lots.ToArray();
+
+            //Tick all lots
+            foreach (var l in lots)
+                l.TickAsync(now).Wait();
+
+            //Remove expired lots
+            lock (mutex)
+            {
+                foreach (var l in lots)
+                {
+                    if (l.IsExpired(now))
+                        this.lots.Remove(l);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Does PSD ticking
+        /// </summary>
+        /// <param name="now"></param>
+        private void ProcessTickPsd(DateTime now)
         {
             //Find the latest ID3 item that hasn't been sent
             ScheduledItem? sendItem = null;
@@ -306,25 +335,6 @@ namespace MsacClient.Utility.Scheduler
             //If the next PSD is known, request that tick time
             if (nextItem != null)
                 RequestTickAt(nextItem.Value.time);
-
-            //Capture lot list
-            ScheduledLot[] lots;
-            lock (mutex)
-                lots = this.lots.ToArray();
-
-            //Tick all lots
-            foreach (var l in lots)
-                l.TickAsync(now).Wait();
-
-            //Remove expired lots
-            lock (mutex)
-            {
-                foreach (var l in lots)
-                {
-                    if (l.IsExpired(now))
-                        this.lots.Remove(l);
-                }
-            }
         }
 
         /// <summary>

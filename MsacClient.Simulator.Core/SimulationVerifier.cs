@@ -1,12 +1,12 @@
-﻿using MsacClient.Simulator.Simulator.Output;
-using MsacClient.Simulator.Simulator.Settings;
+﻿using MsacClient.Simulator.Core.Output;
+using MsacClient.Simulator.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator
+namespace MsacClient.Simulator.Core
 {
     public abstract class SimulationVerifier
     {

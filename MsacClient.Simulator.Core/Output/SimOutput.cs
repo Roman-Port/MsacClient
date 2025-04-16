@@ -1,11 +1,11 @@
-﻿using MsacClient.Simulator.Simulator.Settings;
+﻿using MsacClient.Simulator.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MsacClient.Simulator.Simulator.Output
+namespace MsacClient.Simulator.Core.Output
 {
     /// <summary>
     /// The results of a simulation.

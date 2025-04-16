@@ -1,4 +1,4 @@
-﻿using MsacClient.Simulator.Simulator.Output;
+﻿using MsacClient.Simulator.Core.Output;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

@@ -1,6 +1,6 @@
-﻿using MsacClient.Simulator.Simulator;
-using MsacClient.Simulator.Simulator.Output;
-using MsacClient.Simulator.Simulator.Settings;
+﻿using MsacClient.Simulator.Core;
+using MsacClient.Simulator.Core.Output;
+using MsacClient.Simulator.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
