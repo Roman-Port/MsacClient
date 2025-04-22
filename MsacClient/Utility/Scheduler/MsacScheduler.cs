@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MsacClient.Utility.Scheduler
 {
@@ -18,6 +19,8 @@ namespace MsacClient.Utility.Scheduler
     public class MsacScheduler : IDisposable
     {
         public delegate void MsacSendErrorEventArgs(IMsacScheduledImage image, string message, Exception ex);
+        public delegate void MsacPsdSendErrorEventArgs(MsacScheduledRequest request, Exception ex);
+        public delegate void NoLotErrorEventArgs(MsacScheduledRequest request);
 
         public MsacScheduler(IMsacConnection connection, MsacUploadManager uploader)
         {
@@ -70,9 +73,26 @@ namespace MsacClient.Utility.Scheduler
         public TimeSpan ImageFloatingJitter { get; set; } = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// The minimum amount of time before an image is set to start where timing adjustments can be made.
+        /// </summary>
+        public TimeSpan ImageTimingChangeDeadline { get; set; } = TimeSpan.FromSeconds(10);
+
+        /* EVENTS */
+
+        /// <summary>
         /// Event raised when there was an error sending/updating an image.
         /// </summary>
         public event MsacSendErrorEventArgs MsacSendError;
+
+        /// <summary>
+        /// Event raised when an ID3 fails to be sent.
+        /// </summary>
+        public event MsacPsdSendErrorEventArgs MsacPsdSendError;
+
+        /// <summary>
+        /// Event raised when ID3 is being sent but the LOT associated isn't valid.
+        /// </summary>
+        public event NoLotErrorEventArgs NoLotError;
 
         /// <summary>
         /// Gets all items across all lists.
@@ -299,7 +319,7 @@ namespace MsacClient.Utility.Scheduler
             //Find all PSDs and generate/update LOTs
             //Get PSD list sorted by time (already done) then sorted by the referenced filename. This is to aid with easier combining of items.
             var psdsScan = psds.Where(x => x.start >= now && x.image != null).OrderBy(x => x.image.Filename).ToArray();
-            List<ActiveLot> usedLots = new List<ActiveLot>();
+            List<ActiveLot> usedLots = new List<ActiveLot>(); // Stores LOTs that have been used in this loop for culling of old ones
             int psdScanIndex = 0;
             while (psdScanIndex < psdsScan.Length)
             {
@@ -328,25 +348,53 @@ namespace MsacClient.Utility.Scheduler
                         //Snap to the duration of the last lot within ImageTimespan
                         //TODO...
 
-                        //Notify MSAC
-                        ActiveLot newLot = await ScheduleNewLotAsync(psd.image, start, duration, now);
-                        activeLots.Add(newLot);
-                        usedLots.Add(newLot);
+                        //Ensure image is uploaded
+                        try
+                        {
+                            //Upload to the MSAC
+                            await uploader.UploadImageAsync(psd.image, now);
+                        } catch (Exception ex)
+                        {
+                            //Raise error but continue; The next operation will almost certainly fail
+                            MsacSendError?.Invoke(psd.image, "Failed to upload image.", ex);
+                        }
+
+                        //Send to MSAC
+                        try
+                        {
+                            //Notify MSAC
+                            ActiveLot newLot = await ScheduleNewLotAsync(psd.image, start, duration, now);
+
+                            //Store
+                            activeLots.Add(newLot);
+                            usedLots.Add(newLot);
+                        } catch (Exception ex)
+                        {
+                            //Raise error
+                            MsacSendError?.Invoke(psd.image, "Failed to create new lot.", ex);
+                        }
                     } else
                     {
                         //Get the lot
                         ActiveLot lot = matchingLots[0];
 
                         //Only if the LOT hasn't already started sending, adjust timing
-                        if (lot.Start > now.AddSeconds(10) && lot.Start != start)
+                        if (lot.Start > now.Add(ImageTimingChangeDeadline) && lot.Start.AbsDifference(start) < ImageFloatingJitter)
                         {
-                            //If the LOT start time is after start, relocate it
-                            if (lot.Start > start)
-                                await lot.Lot.ModifyStartAsync(start);
+                            try
+                            {
+                                //If the LOT start time is after start, relocate it
+                                if (lot.Start > start)
+                                    await lot.Lot.ModifyStartAsync(start);
 
-                            //If the LOT start time is before start and it hasn't been touched yet, relocate it
-                            if (lot.Start < start && !usedLots.Contains(lot))
-                                await lot.Lot.ModifyStartAsync(start);
+                                //If the LOT start time is before start and it hasn't been touched yet, relocate it
+                                if (lot.Start < start && !usedLots.Contains(lot))
+                                    await lot.Lot.ModifyStartAsync(start);
+                            } catch (Exception ex)
+                            {
+                                //Raise error
+                                MsacSendError?.Invoke(lot.Image, "Failed to adjust timing for image.", ex);
+                            }
                         }
 
                         //Use this lot
@@ -380,7 +428,7 @@ namespace MsacClient.Utility.Scheduler
         }
 
         /// <summary>
-        /// Sends the lot to the MSAC and returns it.
+        /// Sends the lot to the MSAC and returns it. Assumes the image has already been uploaded.
         /// </summary>
         /// <param name="image"></param>
         /// <param name="start"></param>
@@ -389,9 +437,6 @@ namespace MsacClient.Utility.Scheduler
         /// <returns></returns>
         private async Task<ActiveLot> ScheduleNewLotAsync(IMsacScheduledImage image, DateTime start, TimeSpan duration, DateTime now)
         {
-            //Upload to the MSAC
-            await uploader.UploadImageAsync(image, now);
-
             //Begin send
             ISyncSendLot lot = await connection.PreSendSyncLotAsync(
                 start,
@@ -461,50 +506,65 @@ namespace MsacClient.Utility.Scheduler
 
             //Send PSD
             if (sendItem != null)
-            {
-                //Branch on if this has an image or not
-                PsdSendBuilder psd = sendItem.Value.req.psd.Clone();
-
-                //If it has an image, apply it
-                bool appliedImage = false;
-                if (sendItem.Value.req.image != null)
-                {
-                    //Clone the PSD
-                    psd = psd.Clone();
-
-                    //Find image
-                    ActiveLot lot = FindMatchingLots(sendItem.Value.req).FirstOrDefault();
-                    if (lot != null)
-                    {
-                        //Set image
-                        psd.XhdrTriggerImage(lot.Lot);
-                        psd.XhdrSetMime(MsacConnection.MIME_SYNC);
-                        appliedImage = true;
-                    } else
-                    {
-                        //TODO: Raise alarm here!
-                    }
-                }
-
-                //If didn't apply image, clear
-                if (!appliedImage)
-                {
-                    psd.XhdrBlankScreen();
-                    psd.XhdrSetMime(MsacConnection.MIME_ASYNC);
-                }
-
-                //Send
-                await connection.SendPSDAsync(psd, sendItem.Value.list.ExporterAddress, sendItem.Value.list.AudioChannel);
-
-                //Update time
-                latestPsdSendTime = sendItem.Value.req.start;
-            }
+                await SendPsdAsync(sendItem.Value.req, sendItem.Value.list);
 
             //If the next PSD is known, request that tick time
             if (nextItem != null)
                 RequestTickAt(nextItem.Value.req.start);
 
             return items.Select(x => x.req).ToArray();
+        }
+
+        /// <summary>
+        /// Sends a specified ID3 item immediately
+        /// </summary>
+        /// <returns></returns>
+        private async Task SendPsdAsync(MsacScheduledRequest req, SchedulerList list)
+        {
+            //Branch on if this has an image or not
+            PsdSendBuilder psd = req.psd.Clone();
+
+            //If it has an image, apply it
+            bool appliedImage = false;
+            if (req.image != null)
+            {
+                //Clone the PSD
+                psd = psd.Clone();
+
+                //Find image
+                ActiveLot lot = FindMatchingLots(req).FirstOrDefault();
+                if (lot != null)
+                {
+                    //Set image
+                    psd.XhdrTriggerImage(lot.Lot);
+                    psd.XhdrSetMime(MsacConnection.MIME_SYNC);
+                    appliedImage = true;
+                }
+                else
+                {
+                    //Raise event, but otherwise send without an image
+                    NoLotError?.Invoke(req);
+                }
+            }
+
+            //If didn't apply image, clear
+            if (!appliedImage)
+            {
+                psd.XhdrBlankScreen();
+                psd.XhdrSetMime(MsacConnection.MIME_ASYNC);
+            }
+
+            //Send
+            try
+            {
+                await connection.SendPSDAsync(psd, list.ExporterAddress, list.AudioChannel);
+            } catch (Exception ex)
+            {
+                MsacPsdSendError?.Invoke(req, ex);
+            }
+
+            //Update time
+            latestPsdSendTime = req.start;
         }
 
         /// <summary>
