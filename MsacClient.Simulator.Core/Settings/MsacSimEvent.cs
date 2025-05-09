@@ -39,5 +39,10 @@ namespace MsacClient.Simulator.Core.Settings
         /// The optional simulated image filename.
         /// </summary>
         public string ImageFilename { get; set; } = null;
+
+        /// <summary>
+        /// An event that is only scheduled but not yet sent.
+        /// </summary>
+        public bool Pending { get; set; } = false;
     }
 }

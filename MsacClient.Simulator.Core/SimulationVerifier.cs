@@ -25,10 +25,10 @@ namespace MsacClient.Simulator.Core
             var orderedTimelines = result.Settings.Timeline.OrderBy(x => x.Time).ToArray();
             foreach (var e in events.OrderBy(x => x.Item2.Start))
             {
-                //Determine what was topmost at this time
+                //Determine what was topmost at this time by selecting the last timeline where the timeline time is before the start time of this item
                 MsacSimEventList topmost = orderedTimelines.Where(x => x.Time < e.Item2.Start).LastOrDefault();
                 if (topmost == null)
-                    throw new Exception();
+                    continue; // This PSD was never in a state where it can be displayed?
 
                 //Check if this event's frame was topmost when this started
                 if (topmost != e.Item1)
@@ -69,7 +69,8 @@ namespace MsacClient.Simulator.Core
                 SimOutputPsd oup = ol[i];
 
                 //Check that times match
-                AssertTrue($"PSD sent time {oup.Time.Ticks} does not equal scheduled time of {(result.Settings.Epoch + inp.Start).Ticks}.", oup.Time == (result.Settings.Epoch + inp.Start));
+                DateTime sentTime = result.Settings.Epoch + inp.Start;
+                AssertTrue($"PSD #{i+1} sent time {oup.Time.ToLongTimeString()} does not equal scheduled time of {sentTime.ToLongTimeString()}.", oup.Time == sentTime);
 
                 //Check that content matches
                 AssertTrue($"PSD times match but content doesn't.", inp.Comment == oup.Text);

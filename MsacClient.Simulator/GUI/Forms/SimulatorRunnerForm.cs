@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -37,51 +38,72 @@ namespace MsacClient.Simulator.GUI.Forms
 
         private void Worker()
         {
+            //Tick graph
             int tickNum = 1;
+            Stopwatch lastGuiUpdate = new Stopwatch();
+            lastGuiUpdate.Start();
             do
             {
-                Invoke((MethodInvoker)delegate
+                //Set text if it hasn't recently
+                if (tickNum == 1 || lastGuiUpdate.ElapsedMilliseconds > 1000 / 30)
                 {
-                    graph.Text = $"Simulating...(tick {tickNum++} at {run.SimulatedTime.ToShortDateString()} {run.SimulatedTime.ToLongTimeString()})";
-                });
+                    SetGraphTextFromWorker($"Simulating...(tick {tickNum} at {run.SimulatedTime.ToShortDateString()} {run.SimulatedTime.ToLongTimeString()})");
+                    lastGuiUpdate.Restart();
+                }
+
+                //Increment state
+                tickNum++;
             } while (!run.Process());
+
+            //Set and start verifying
             Invoke((MethodInvoker)delegate
             {
-                SimulationAvailable(run.Result);
+                graph.Text = $"Verifying...";
+                graph.Data = run.Result;
             });
-        }
-
-        private void SimulationAvailable(SimOutput result)
-        {
-            //Set graph
-            graph.Text = "";
-            graph.Data = result;
 
             //Verify
             try
             {
                 //Run
-                Verifier ver = new Verifier(result);
+                Verifier ver = new Verifier(run.Result);
                 ver.Verify();
 
                 //Check if errors
                 if (ver.FirstError == null)
                 {
                     //OK
-                    passFailLabel.Text = "PASS";
-                    passFailLabel.BackColor = Color.Lime;
-                } else
+                    SetPassFailLabelFromWorker("PASS", Color.Lime);
+                }
+                else
                 {
                     //FAIL
-                    passFailLabel.Text = "FAIL: " + ver.FirstError;
-                    passFailLabel.BackColor = Color.Red;
+                    SetPassFailLabelFromWorker("FAIL: " + ver.FirstError, Color.Red);
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 //Set
-                passFailLabel.Text = "EXCEPTION: " + ex.Message;
-                passFailLabel.BackColor = Color.Red;
+                SetPassFailLabelFromWorker("EXCEPTION: " + ex.Message, Color.Red);
             }
+            SetGraphTextFromWorker("");
+        }
+
+        private void SetGraphTextFromWorker(string text)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                graph.Text = text;
+            });
+        }
+
+        private void SetPassFailLabelFromWorker(string text, Color color)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                passFailLabel.Text = text;
+                passFailLabel.BackColor = color;
+            });
         }
 
         class Verifier : SimulationVerifier

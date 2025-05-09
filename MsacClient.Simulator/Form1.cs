@@ -9,6 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MsacClient.Simulator.Core;
+using MsacClient.Simulator.Properties;
+using MsacClient.Simulator.GUI.Forms;
 
 namespace MsacClient.Simulator
 {
@@ -19,96 +22,32 @@ namespace MsacClient.Simulator
             InitializeComponent();
         }
 
+        private MsacSimTest test = new MsacSimTest();
+
         private void Form1_Load(object sender, EventArgs e)
         {
-            MsacSimTest settings = new MsacSimTest
+            
+        }
+
+        private void importToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //Show file selector
+            OpenFileDialog fd = new OpenFileDialog();
+            fd.Filter = "Text Files (*.txt)|*.txt";
+            if (fd.ShowDialog() != DialogResult.OK)
+                return;
+
+            //Import
+            test = new MsacSimTest
             {
-                Label = "Test",
-                /*Timeline = new List<MsacSimEventList>()
-                {
-                    new MsacSimEventList
-                    {
-                        Time = Utility.Time(0, 0, 0),
-                        Events = new List<MsacSimEvent>()
-                        {
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 10, 0),
-                                Length = Utility.Time(0, 2, 0),
-                                Comment = "a",
-                                ImageFilename = "img1"
-                            },
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 12, 0),
-                                Length = Utility.Time(0, 1, 0),
-                                Comment = "b",
-                                ImageFilename = "img2"
-                            }
-                        }
-                    },
-                    new MsacSimEventList
-                    {
-                        Time = Utility.Time(0, 8, 0),
-                        Events = new List<MsacSimEvent>()
-                        {
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 10, 0),
-                                Length = Utility.Time(0, 2, 0),
-                                Comment = "a",
-                                ImageFilename = "img1"
-                            },
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 12, 0),
-                                Length = Utility.Time(0, 1, 0),
-                                Comment = "b",
-                                ImageFilename = "img2"
-                            },
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 13, 0),
-                                Length = Utility.Time(0, 1, 0),
-                                Comment = "c",
-                                ImageFilename = "img1"
-                            }
-                        }
-                    }
-                }*/
-                Timeline = new List<MsacSimEventList>()
-                {
-                    new MsacSimEventList
-                    {
-                        Time = Utility.Time(0, 0, 0),
-                        Events = new List<MsacSimEvent>()
-                        {
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 10, 0),
-                                Length = Utility.Time(0, 5, 0),
-                                Comment = "a",
-                                ImageFilename = "img1"
-                            }
-                        }
-                    },
-                    new MsacSimEventList
-                    {
-                        Time = Utility.Time(0, 9, 30),
-                        Events = new List<MsacSimEvent>()
-                        {
-                            new MsacSimEvent
-                            {
-                                Start = Utility.Time(0, 10, 1),
-                                Length = Utility.Time(0, 5, 0),
-                                Comment = "a",
-                                ImageFilename = "img1"
-                            }
-                        }
-                    }
-                }
+                Label = "Imported Test",
+                Timeline = RealWorldTestImporter.ImportFromFile(fd.FileName)
             };
-            new TestEditorForm(settings).ShowDialog();
+        }
+
+        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new SimulatorRunnerForm(test).ShowDialog();
         }
     }
 }

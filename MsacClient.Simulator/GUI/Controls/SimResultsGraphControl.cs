@@ -196,7 +196,7 @@ namespace MsacClient.Simulator.GUI.Controls
                         Start = psd.Time - data.Settings.Epoch,
                         End = End,
                         LotId = psd.LotId,
-                        Text = psd.Text
+                        Text = $"{psd.Text}\r\n" + (psd.LotId != null ? $"(lot {psd.LotId})" : "(no lot)")
                     };
                     id3s.Add(last);
                 }
@@ -263,7 +263,7 @@ namespace MsacClient.Simulator.GUI.Controls
                     {
                         Time = sendTime - data.Settings.Epoch,
                         Color = cancelled ? colorMarkerCancel : colorMarkerStartSend,
-                        Text = cancelled ? "Cancelled" : "Start Send"
+                        Text = cancelled ? "Cancelled" : "Scheduled"
                     });
 
                     //Put marker at end of send period
@@ -273,7 +273,7 @@ namespace MsacClient.Simulator.GUI.Controls
                         {
                             Time = sendTime + l.Duration - data.Settings.Epoch,
                             Color = colorMarkerFinishSend,
-                            Text = "Send Finish"
+                            Text = "Finish"
                         });
                     }
                 }

@@ -136,7 +136,7 @@ namespace MsacClient.Simulator.Core
                     end = SettingTimeToSimTime(x.End),
                     psd = new PsdSendBuilder()
                         .SetTitle(x.Comment),
-                    image = x.ImageFilename == null ? null : new SimulatedImage(x.ImageFilename)
+                    image = x.ImageFilename == null ? null : new SimulatedImage(x.ImageFilename),
                 };
             }).ToArray();
         }
