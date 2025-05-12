@@ -44,5 +44,23 @@ namespace MsacClient.Simulator.Core.Settings
         /// An event that is only scheduled but not yet sent.
         /// </summary>
         public bool Pending { get; set; } = false;
+
+        public override bool Equals(object _obj)
+        {
+            if (_obj is MsacSimEvent obj)
+            {
+                return Start == obj.Start &&
+                    End == obj.End &&
+                    Comment == obj.Comment &&
+                    ImageFilename == obj.ImageFilename &&
+                    Pending == obj.Pending;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

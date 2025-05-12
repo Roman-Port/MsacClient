@@ -16,7 +16,7 @@ namespace MsacClient.Simulator.Core
             this.result = result;
 
             //Do a kind of simulation ourselves to find what PSDs are expected to have been sent
-            //Collect all requests from all timelines (there will be duplicates)
+            /*//Collect all requests from all timelines (there will be duplicates)
             List<Tuple<MsacSimEventList, MsacSimEvent>> events = new List<Tuple<MsacSimEventList, MsacSimEvent>>();
             foreach (var t in result.Settings.Timeline)
                 events.AddRange(t.Events.Select(x => new Tuple<MsacSimEventList, MsacSimEvent>(t, x)));
@@ -36,11 +36,54 @@ namespace MsacClient.Simulator.Core
 
                 //Register this
                 sentPsds.Add(e.Item2);
-            }
+            }*/
+            sentPsds = CalculateSentPsds(result.Settings.Timeline);
         }
 
         private readonly SimOutput result;
         private readonly List<MsacSimEvent> sentPsds = new List<MsacSimEvent>();
+
+        private static List<MsacSimEvent> CalculateSentPsds(IEnumerable<MsacSimEventList> input)
+        {
+            //Collect all possible tick times ordered by time
+            List<TimeSpan> ticks = new List<TimeSpan>();
+            foreach (var tl in input)
+                ticks.AddRange(tl.Events.Select(x => x.Start));
+            ticks = ticks.OrderBy(x => x).ToList();
+
+            //Order by time then select ones where their event list is topmost
+            var orderedTimelines = input.OrderBy(x => x.Time).ToArray();
+
+            //Enumerate ticks
+            List<MsacSimEvent> output = new List<MsacSimEvent>();
+            MsacSimEvent latest = null;
+            foreach (var tick in ticks)
+            {
+                //Determine what was topmost at this time by selecting the last timeline where the timeline time is before the start time of this item
+                MsacSimEventList topmost = orderedTimelines.Where(x => x.Time <= tick).LastOrDefault();
+                if (topmost == null)
+                    continue; // Bad invalid time
+
+                //Determine the PSD to be rendered at this time
+                MsacSimEvent psd = topmost.Events.Where(x => x.Start <= tick && x.End >= tick/* && !x.Pending*/)
+                    .OrderBy(x => x.Start)
+                    .LastOrDefault();
+
+                //If no PSD is set, this was a null
+                if (psd == null)
+                    continue;
+
+                //Check if this matches the last one
+                if (latest != null && (latest.Comment == psd.Comment || latest.ImageFilename == psd.ImageFilename))
+                    continue;
+
+                //Add
+                output.Add(psd);
+                latest = psd;
+            }
+
+            return output;
+        }
 
         /// <summary>
         /// Verifies that the result is valid.
