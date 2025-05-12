@@ -156,5 +156,27 @@ namespace MsacClient.Entities
                 xhdrMime = xhdrMime
             };
         }
+
+        public override bool Equals(object _obj)
+        {
+            if (_obj is PsdSendBuilder obj)
+            {
+                return title == obj.title &&
+                    artist == obj.artist &&
+                    album == obj.album &&
+                    genre == obj.genre &&
+                    xhdrMime == obj.xhdrMime &&
+                    xhdrFlush == obj.xhdrFlush &&
+                    xhdrTrigger == obj.xhdrTrigger &&
+                    xhdrBlank == obj.xhdrBlank &&
+                    xhdrLotId == obj.xhdrLotId;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

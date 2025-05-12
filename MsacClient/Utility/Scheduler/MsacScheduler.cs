@@ -404,8 +404,21 @@ namespace MsacClient.Utility.Scheduler
                 }
             }
 
+            //Mark any lot that is referenced by any item we know of to be used...this is a band-aid fix for items being erroneously cancelled if moving around (like not immediately sending pending events)
+            foreach (var psd in psds)
+            {
+                if (psd.image != null)
+                {
+                    foreach (var l in FindMatchingLots(psd))
+                    {
+                        if (!usedLots.Contains(l))
+                            usedLots.Add(l);
+                    }
+                }
+            }
+
             //Cancel and remove any lots that were not referenced
-            foreach (var unusedLot in activeLots.Where(x => x.Start > latestPsdSendTime && !x.Lot.Cancelled && !usedLots.Contains(x)).ToArray())
+            foreach (var unusedLot in activeLots.Where(x => !x.Consumed && !x.Lot.Cancelled && !usedLots.Contains(x)).ToArray())
             {
                 //Attempt to cancel
                 try
@@ -479,29 +492,29 @@ namespace MsacClient.Utility.Scheduler
                 //Collect all items
                 items = Items.OrderBy(x => x.req.start).ToArray();
 
-                //Find all relevant items
-                foreach (var item in items)
-                {
-                    //Get items that:
-                    // * Are after the last PSD was sent
-                    // * Are started
-                    // * Are not expired
-                    // * Do NOT match the latest one
-                    if (item.req.start > latestPsdSendTime && item.req.start <= now && (sendItem == null || item.req.start > sendItem.Value.req.start) && !item.req.psd.Equals(lastSentPsd))
-                        sendItem = item;
-                }
+                //Find the next PSDs to send that matches the following conditions:
+                // * Are after the last PSD was sent
+                // * Are started
+                // * Are not expired
+                var psdCandidates = items.Where(item => item.req.start <= now && item.req.end > now && !item.req.pending).ToArray();
 
-                //Update last PSD to prevent resending the same one
-                if (sendItem != null)
+                //The first item can potentially be sent; Send only if it doesn't match the current one
+                if (psdCandidates.Length > 0 && !psdCandidates[0].req.psd.Equals(lastSentPsd))
+                {
+                    //Set pending send
+                    sendItem = psdCandidates[0];
+
+                    //Update last PSD to prevent resending the same one
                     lastSentPsd = sendItem.Value.req.psd;
+                }
 
                 //Find the next PSD update (after this one, if one was found)
                 DateTime compareTime = now;
                 if (sendItem != null)
                     compareTime = sendItem.Value.req.start;
-                var nextQuery = items.Where(x => x.req.start > compareTime);
-                if (nextQuery.Count() > 0)
-                    nextItem = nextQuery.FirstOrDefault();
+                var nextQuery = items.Where(x => x.req.start > compareTime).ToArray();
+                if (nextQuery.Length > 0)
+                    nextItem = nextQuery[0];
             }
 
             //Send PSD
@@ -539,6 +552,9 @@ namespace MsacClient.Utility.Scheduler
                     psd.XhdrTriggerImage(lot.Lot);
                     psd.XhdrSetMime(MsacConnection.MIME_SYNC);
                     appliedImage = true;
+
+                    //Mark it as consumed to prevent cancellation
+                    lot.Consumed = true;
                 }
                 else
                 {
@@ -673,6 +689,11 @@ namespace MsacClient.Utility.Scheduler
             /// The image filename to check for matches.
             /// </summary>
             public string Filename => image.Filename;
+
+            /// <summary>
+            /// Flag indicating that a PSD has used this and it should not be cancelled.
+            /// </summary>
+            public bool Consumed { get; set; } = false;
         }
     }
 }

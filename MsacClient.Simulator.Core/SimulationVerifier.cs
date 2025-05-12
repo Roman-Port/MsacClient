@@ -43,43 +43,69 @@ namespace MsacClient.Simulator.Core
         private readonly SimOutput result;
         private readonly List<MsacSimEvent> sentPsds = new List<MsacSimEvent>();
 
+        /// <summary>
+        /// PSDs calculated to be sent
+        /// </summary>
+        public List<MsacSimEvent> ExpectedPsds => sentPsds;
+
         private static List<MsacSimEvent> CalculateSentPsds(IEnumerable<MsacSimEventList> input)
         {
-            //Collect all possible tick times ordered by time
-            List<TimeSpan> ticks = new List<TimeSpan>();
-            foreach (var tl in input)
-                ticks.AddRange(tl.Events.Select(x => x.Start));
-            ticks = ticks.OrderBy(x => x).ToList();
-
-            //Order by time then select ones where their event list is topmost
+            //Order timelines by time
             var orderedTimelines = input.OrderBy(x => x.Time).ToArray();
 
-            //Enumerate ticks
+            //Enumerate them
             List<MsacSimEvent> output = new List<MsacSimEvent>();
             MsacSimEvent latest = null;
-            foreach (var tick in ticks)
+            for (int i = 0; i < orderedTimelines.Length; i++)
             {
-                //Determine what was topmost at this time by selecting the last timeline where the timeline time is before the start time of this item
-                MsacSimEventList topmost = orderedTimelines.Where(x => x.Time <= tick).LastOrDefault();
-                if (topmost == null)
-                    continue; // Bad invalid time
+                //Determine next tick from the next timeline, if any
+                TimeSpan nextTick = TimeSpan.MaxValue;
+                if (i + 1 < orderedTimelines.Length)
+                    nextTick = orderedTimelines[i + 1].Time;
 
-                //Determine the PSD to be rendered at this time
-                MsacSimEvent psd = topmost.Events.Where(x => x.Start <= tick && x.End >= tick/* && !x.Pending*/)
-                    .OrderBy(x => x.Start)
-                    .LastOrDefault();
+                //Build a list of "sub ticks" where events occur between these, in addition to the time of this timeline
+                TimeSpan[] ticks = orderedTimelines[i].Events.Where(x => x.Start >= orderedTimelines[i].Time && x.Start < nextTick)
+                    .Select(x => x.Start)
+                    .Concat(new TimeSpan[] { orderedTimelines[i].Time })
+                    .OrderBy(x => x)
+                    .ToArray();
 
-                //If no PSD is set, this was a null
-                if (psd == null)
-                    continue;
+                //Simulate each tick
+                TimeSpan lastSimulated = TimeSpan.MinValue;
+                foreach (TimeSpan tick in ticks)
+                {
+                    //Determine the PSD to be rendered at this time (ignoring ones already simulated)
+                    MsacSimEvent psd = orderedTimelines[i].Events.Where(x => x.Start <= tick && x.End > tick && !x.Pending)
+                        .OrderBy(x => x.Start)
+                        .FirstOrDefault();
+                    lastSimulated = tick;
 
-                //Check if this matches the last one
-                if (latest != null && (latest.Comment == psd.Comment || latest.ImageFilename == psd.ImageFilename))
-                    continue;
+                    //Skip if none were found
+                    if (psd == null)
+                        continue;
 
-                //Add
-                output.Add(psd);
-                latest = psd;
+                    //Check if this matches the last one
+                    if (latest != null && latest.Comment == psd.Comment && latest.ImageFilename == psd.ImageFilename)
+                        continue;
+
+                    //Update last
+                    if (latest != null)
+                        latest.End = tick;
+
+                    //Create clone
+                    psd = new MsacSimEvent
+                    {
+                        Start = tick,
+                        Comment = psd.Comment,
+                        Pending = psd.Pending,
+                        ImageFilename = psd.ImageFilename,
+                        End = tick
+                    };
+
+                    //Add and update state
+                    output.Add(psd);
+                    latest = psd;
+                }
             }
 
             return output;
@@ -93,6 +119,12 @@ namespace MsacClient.Simulator.Core
         {
             VerifyPsds();
             VerifyLots();
+        }
+
+        private string FormatTime(DateTime time)
+        {
+            TimeSpan span = time - result.Settings.Epoch;
+            return span.TotalSeconds.ToString();
         }
 
         private void VerifyPsds()
@@ -111,9 +143,29 @@ namespace MsacClient.Simulator.Core
                 MsacSimEvent inp = il[i];
                 SimOutputPsd oup = ol[i];
 
-                //Check that times match
+                //Find the first time the system was "aware" of this PSD by enumerating timelines
+                DateTime firstAvail = DateTime.MinValue;
+                foreach (var t in result.Settings.Timeline.OrderBy(x => x.Time))
+                {
+                    //Break after this event
+                    if (t.Time > inp.Start)
+                        break;
+
+                    //Check if this contains a matching PSD
+                    bool containsMatch = false;
+                    foreach (var candidate in t.Events)
+                        containsMatch = containsMatch || (candidate.Comment == inp.Comment && candidate.ImageFilename == inp.ImageFilename);
+
+                    //If no match, clear available counter. Otherwise only set it if not set
+                    if (containsMatch && firstAvail == DateTime.MinValue)
+                        firstAvail = result.Settings.Epoch + t.Time;
+                    if (!containsMatch)
+                        firstAvail = DateTime.MinValue;
+                }
+
+                //Check that PSD times
                 DateTime sentTime = result.Settings.Epoch + inp.Start;
-                AssertTrue($"PSD #{i+1} sent time {oup.Time.ToLongTimeString()} does not equal scheduled time of {sentTime.ToLongTimeString()}.", oup.Time == sentTime);
+                AssertTrue($"PSD #{i+1} sent time {FormatTime(oup.Time)} does not equal scheduled time of {FormatTime(sentTime)}.", oup.Time == sentTime);
 
                 //Check that content matches
                 AssertTrue($"PSD times match but content doesn't.", inp.Comment == oup.Text);
@@ -176,11 +228,16 @@ namespace MsacClient.Simulator.Core
                     {
                         DateTime scheduledMsacNotify = firstPsd.Time - result.Settings.SchedulerSettings.ImagePreNotify;
                         if (scheduledMsacNotify < result.Settings.Epoch)
-                            Fault($"Test is invalid; Unable to check MSAC delivery time because epoch is after scheduled notify time {scheduledMsacNotify.ToLongTimeString()}.");
-                        if (lot.CreatedAt > scheduledMsacNotify)
-                            Fault($"Lot {lot.LotId} notified the MSAC too late by {(lot.CreatedAt - scheduledMsacNotify).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
-                        if (lot.CreatedAt < scheduledMsacNotify)
-                            Fault($"Lot {lot.LotId} notified the MSAC too early by {(scheduledMsacNotify - lot.CreatedAt).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                        {
+                            //Test for this lot is imposible; The MSAC delivery time cannot be checked because it's scheduled before the test would've started!
+                            Warn($"Test is invalid; Unable to check MSAC delivery time for lot {lot.LotId} because epoch is after scheduled notify time {scheduledMsacNotify.ToLongTimeString()}.");
+                        } else
+                        {
+                            if (lot.CreatedAt > scheduledMsacNotify)
+                                Fault($"Lot {lot.LotId} notified the MSAC too late by {(lot.CreatedAt - scheduledMsacNotify).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                            if (lot.CreatedAt < scheduledMsacNotify)
+                                Fault($"Lot {lot.LotId} notified the MSAC too early by {(scheduledMsacNotify - lot.CreatedAt).TotalSeconds} seconds (expected at {scheduledMsacNotify.ToLongTimeString()}).");
+                        }
                     }
                 }
             }
@@ -191,6 +248,12 @@ namespace MsacClient.Simulator.Core
         /// </summary>
         /// <param name="message"></param>
         protected abstract void Fault(string message);
+
+        /// <summary>
+        /// Reports a warning that doesn't mean the test failed but indicates something is off (usually something untestable)
+        /// </summary>
+        /// <param name="message"></param>
+        protected abstract void Warn(string message);
 
         /// <summary>
         /// Faults if condition is false.

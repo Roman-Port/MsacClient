@@ -29,5 +29,10 @@ namespace MsacClient.Utility.Scheduler
         /// The image to attach. Optional.
         /// </summary>
         public IMsacScheduledImage image;
+
+        /// <summary>
+        /// If true, this will be scheduled for with images but will not send a PSD until cleared.
+        /// </summary>
+        public bool pending;
     }
 }

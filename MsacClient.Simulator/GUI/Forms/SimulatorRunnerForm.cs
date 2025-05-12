@@ -26,6 +26,7 @@ namespace MsacClient.Simulator.GUI.Forms
 
         private readonly MsacSimTest settings;
         private readonly SimulationRunner run;
+        private Verifier ver;
         private Thread worker;
 
         private void SimulatorRunnerForm_Load(object sender, EventArgs e)
@@ -66,7 +67,7 @@ namespace MsacClient.Simulator.GUI.Forms
             try
             {
                 //Run
-                Verifier ver = new Verifier(run.Result);
+                ver = new Verifier(run.Result);
                 ver.Verify();
 
                 //Check if errors
@@ -87,6 +88,12 @@ namespace MsacClient.Simulator.GUI.Forms
                 SetPassFailLabelFromWorker("EXCEPTION: " + ex.Message, Color.Red);
             }
             SetGraphTextFromWorker("");
+
+            //Enable toolstrip items
+            Invoke((MethodInvoker)delegate
+            {
+                pSDListToolStripMenuItem.Enabled = true;
+            });
         }
 
         private void SetGraphTextFromWorker(string text)
@@ -113,12 +120,23 @@ namespace MsacClient.Simulator.GUI.Forms
             }
 
             public string FirstError { get; set; } = null;
+            public List<string> Warnings { get; set; } = new List<string>();
 
             protected override void Fault(string message)
             {
                 if (FirstError == null)
                     FirstError = message;
             }
+
+            protected override void Warn(string message)
+            {
+                Warnings.Add(message);
+            }
+        }
+
+        private void pSDListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new SimPsdsView(ver.ExpectedPsds.ToArray(), run.Result.Psds.ToArray(), run.Result.Settings.Epoch).Show();
         }
     }
 }

@@ -73,7 +73,7 @@ namespace MsacClient.Simulator.Core
         public bool Process()
         {
             //Find the next timeline event after the simulated time
-            MsacSimEventList nextTimelineEvent = settings.Timeline.OrderBy(x => x.Time).Where(x => SettingTimeToSimTime(x.Time) >= simTime).FirstOrDefault();
+            MsacSimEventList nextTimelineEvent = settings.Timeline.OrderBy(x => x.Time).Where(x => x != lastTimelineEvent && SettingTimeToSimTime(x.Time) >= simTime).FirstOrDefault();
             DateTime nextTimelineEventTime = DateTime.MaxValue;
             if (nextTimelineEvent != null)
                 nextTimelineEventTime = SettingTimeToSimTime(nextTimelineEvent.Time);
@@ -82,7 +82,7 @@ namespace MsacClient.Simulator.Core
             DateTime next = simTime.AddMinutes(1); // Start with the +1 minute failsafe built into the scheduler worker
             if (sched.NextTick.HasValue && sched.NextTick.Value < next) // If the next scheduled tick is closer than the default, apply
                 next = sched.NextTick.Value;
-            if (nextTimelineEvent != null && nextTimelineEvent != lastTimelineEvent && nextTimelineEventTime > simTime && nextTimelineEventTime < next) // If the next event is closer than the default but still in the future, apply
+            if (nextTimelineEvent != null && nextTimelineEventTime < next) // If the next event is closer than the default but still in the future, apply
                 next = nextTimelineEventTime;
 
             //Constrain to not go back in time
@@ -137,6 +137,7 @@ namespace MsacClient.Simulator.Core
                     psd = new PsdSendBuilder()
                         .SetTitle(x.Comment),
                     image = x.ImageFilename == null ? null : new SimulatedImage(x.ImageFilename),
+                    pending = x.Pending
                 };
             }).ToArray();
         }
@@ -323,8 +324,8 @@ namespace MsacClient.Simulator.Core
                     throw new Exception("Cancelling already cancelled event.");
 
                 //If after it would've sent, throw error
-                if (ctx.simTime >= output.FinalStartTime)
-                    throw new Exception("Attempted to cancel image already being sent.");
+                //if (ctx.simTime >= output.FinalStartTime)
+                //    throw new Exception("Attempted to cancel image already being sent.");
 
                 //Add event
                 output.Events.Add(new SimOutputLotEvent
@@ -334,11 +335,8 @@ namespace MsacClient.Simulator.Core
                 });
 
                 //Set
-                if (ctx.simTime < output.FinalStartTime)
-                {
-                    output.FinalStartTime = ctx.simTime;
-                    output.Cancelled = true;
-                }
+                output.FinalStartTime = ctx.simTime;
+                output.Cancelled = true;
 
                 //Delay
                 return CreateDelayedResult(ctx.settings.TimingSettings.CancelSyncSendDelay);

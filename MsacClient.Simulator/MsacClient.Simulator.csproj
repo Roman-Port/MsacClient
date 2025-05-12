@@ -76,6 +76,12 @@
     <Compile Include="GUI\Controls\TimeEntryBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="GUI\Forms\SimPsdsView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\Forms\SimPsdsView.Designer.cs">
+      <DependentUpon>SimPsdsView.cs</DependentUpon>
+    </Compile>
     <Compile Include="GUI\Forms\SimulatorRunnerForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -102,6 +108,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Controls\TestEditorTimelineEvent.resx">
       <DependentUpon>TestEditorTimelineEvent.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\Forms\SimPsdsView.resx">
+      <DependentUpon>SimPsdsView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="GUI\Forms\SimulatorRunnerForm.resx">
       <DependentUpon>SimulatorRunnerForm.cs</DependentUpon>
