@@ -2,6 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Title>MSAC Client</Title>
+    <Authors>RomanPort</Authors>
+    <Company>RomanPort</Company>
+    <Description>Client for talking to an HD Radio MSAC to send title/artist info and images.</Description>
+    <PackageProjectUrl>https://github.com/Roman-Port/MsacClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Roman-Port/MsacClient</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
 </Project>
