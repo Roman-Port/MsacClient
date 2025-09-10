@@ -19,6 +19,8 @@ namespace MsacClient.Utility.Scheduler
     public class MsacScheduler : IDisposable
     {
         public delegate void MsacSendErrorEventArgs(IMsacScheduledImage image, string message, Exception ex);
+        public delegate void MsacPsdSendBeginEventArgs(MsacScheduledRequest request);
+        public delegate void MsacPsdSendSuccessEventArgs(MsacScheduledRequest request);
         public delegate void MsacPsdSendErrorEventArgs(MsacScheduledRequest request, Exception ex);
         public delegate void NoLotErrorEventArgs(MsacScheduledRequest request);
 
@@ -83,6 +85,16 @@ namespace MsacClient.Utility.Scheduler
         /// Event raised when there was an error sending/updating an image.
         /// </summary>
         public event MsacSendErrorEventArgs MsacSendError;
+
+        /// <summary>
+        /// Event raised when a PSD is about to send
+        /// </summary>
+        public event MsacPsdSendBeginEventArgs MsacPsdSendBegin;
+
+        /// <summary>
+        /// Event raised when a PSD has successfully sent
+        /// </summary>
+        public event MsacPsdSendSuccessEventArgs MsacPsdSendSuccess;
 
         /// <summary>
         /// Event raised when an ID3 fails to be sent.
@@ -573,7 +585,9 @@ namespace MsacClient.Utility.Scheduler
             //Send
             try
             {
+                MsacPsdSendBegin?.Invoke(req);
                 await connection.SendPSDAsync(psd, list.ExporterAddress, list.AudioChannel);
+                MsacPsdSendSuccess?.Invoke(req);
             } catch (Exception ex)
             {
                 MsacPsdSendError?.Invoke(req, ex);
